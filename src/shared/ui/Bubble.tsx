@@ -1,0 +1,114 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/shared/lib/cn";
+import type { MemoryColor } from "@/shared/config/memoryColors";
+
+// Полные строковые классы (не собираются динамически), чтобы Tailwind JIT их не потерял.
+const MEMORY_COLOR_CLASS: Record<MemoryColor, string> = {
+  none: "bg-memory-none",
+  blue: "bg-memory-blue",
+  green: "bg-memory-green",
+  yellow: "bg-memory-yellow",
+  orange: "bg-memory-orange",
+  red: "bg-memory-red",
+  black: "bg-memory-black",
+};
+
+const MEMORY_COLOR_GLOW: Record<MemoryColor, string> = {
+  none: "shadow-none",
+  blue: "shadow-[0_0_18px_-4px_rgba(79,168,224,0.7)]",
+  green: "shadow-[0_0_18px_-4px_rgba(76,201,138,0.7)]",
+  yellow: "shadow-[0_0_18px_-4px_rgba(232,212,77,0.7)]",
+  orange: "shadow-[0_0_18px_-4px_rgba(232,149,77,0.7)]",
+  red: "shadow-[0_0_18px_-4px_rgba(224,85,79,0.8)]",
+  black: "shadow-[0_0_18px_-4px_rgba(0,0,0,0.9)]",
+};
+
+export interface BubbleProps {
+  /** Номер задания ЕГЭ (1..27) — подпись внутри бабла. */
+  number: number;
+  color: MemoryColor;
+  /** Текст статуса для долгого тапа, доступность (см. ТЗ). */
+  statusText: string;
+  /** Уже засчитано сегодня — клик не двигает состояние, но UI может лёгким импульсом отреагировать. */
+  alreadyReviewedToday?: boolean;
+  onReview?: () => void;
+  size?: "sm" | "md";
+}
+
+export function Bubble({
+  number,
+  color,
+  statusText,
+  alreadyReviewedToday = false,
+  onReview,
+  size = "md",
+}: BubbleProps) {
+  const [showStatus, setShowStatus] = useState(false);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handlePointerDown() {
+    pressTimer.current = setTimeout(() => setShowStatus(true), 420);
+  }
+
+  function handlePointerUp() {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    if (showStatus) {
+      setShowStatus(false);
+      return; // долгий тап — не засчитываем клик
+    }
+    triggerHaptic();
+    onReview?.();
+  }
+
+  function triggerHaptic() {
+    // Telegram Haptic Feedback API, если доступно (см. ТЗ, "Направление дизайна").
+    const tg = (globalThis as any)?.Telegram?.WebApp;
+    tg?.HapticFeedback?.impactOccurred?.(alreadyReviewedToday ? "light" : "medium");
+  }
+
+  const dimension = size === "sm" ? "h-10 w-10 text-xs" : "h-12 w-12 text-sm";
+
+  return (
+    <div className="relative flex flex-col items-center">
+      <motion.button
+        type="button"
+        aria-label={`Задание ${number}. ${statusText}`}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={() => {
+          if (pressTimer.current) clearTimeout(pressTimer.current);
+          setShowStatus(false);
+        }}
+        whileTap={{ scale: 0.88 }}
+        animate={alreadyReviewedToday ? { scale: [1, 1.12, 1] } : undefined}
+        transition={{ type: "spring", stiffness: 300, damping: 14 }}
+        className={cn(
+          "relative flex items-center justify-center rounded-full font-body font-semibold text-deep/90",
+          "ring-1 ring-white/10 backdrop-blur-sm transition-colors",
+          dimension,
+          MEMORY_COLOR_CLASS[color],
+          MEMORY_COLOR_GLOW[color],
+          color === "none" && "text-foam-muted",
+          color === "black" && "text-foam",
+        )}
+      >
+        {number}
+      </motion.button>
+
+      {showStatus && (
+        <div
+          role="status"
+          className="absolute -top-9 z-10 whitespace-nowrap rounded-md bg-deep-panel2 px-2 py-1 text-[11px] text-foam shadow-lg ring-1 ring-white/10"
+        >
+          {statusText}
+        </div>
+      )}
+    </div>
+  );
+}
