@@ -1,21 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TaskBubblesPanel } from "@/widgets/task-bubbles-panel/ui/TaskBubblesPanel";
 import { WeekBubble } from "@/widgets/week-bubble/ui/WeekBubble";
 import { GrowthHistory } from "@/widgets/growth-history/ui/GrowthHistory";
+import {
+  getTelegramWebApp,
+  getTelegramUser,
+  getTelegramInitData,
+} from "@/shared/lib/telegram";
+import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
-// Первый экран — статичная витрина на моках.
-// Клик по баблу пока просто двигает локальный счётчик недели;
-// реальная логика (ReviewAlgorithm, антиспам "раз в день", запись в БД)
-// подключается через API route на entities/task-memory.
 export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(8);
   const targetCount = 14;
+  const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Инициализируем Telegram WebApp
+    const tg = getTelegramWebApp();
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    // Загружаем задачи пользователя
+    async function loadTasks() {
+      try {
+        const initData = getTelegramInitData();
+        const telegramUser = getTelegramUser();
+
+        if (!initData || !telegramUser) {
+          console.warn("No Telegram data available");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch("/api/tasks", {
+          headers: {
+            "x-telegram-init-data": initData,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setUser(data.user);
+        setTasks(data.tasks);
+      } catch (error) {
+        console.error("Failed to load tasks:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadTasks();
+  }, []);
 
   function handleReview() {
     setSolvedCount((v) => Math.min(v + 1, targetCount));
   }
+
+  if (loading) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
+        <p className="text-foam-muted">Загружаю твои задачи...</p>
+      </main>
+    );
+  }
+
+  const tierLabel = "Каменный"; // позже из БД
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-8 px-4 pb-10 pt-8">
@@ -25,15 +83,25 @@ export default function HomePage() {
           <p className="text-xs text-foam-muted">не выполняй задания — заботься о памяти</p>
         </div>
         <div className="rounded-full bg-deep-panel px-3 py-1 text-xs text-gold ring-1 ring-gold/30">
-          Каменный
+          {tierLabel}
         </div>
       </header>
+
+      {user && (
+        <div className="text-center text-sm text-foam-muted">
+          Привет, {user.first_name}!
+        </div>
+      )}
 
       <div className="flex justify-center">
         <WeekBubble solvedCount={solvedCount} targetCount={targetCount} />
       </div>
 
-      <TaskBubblesPanel onReview={handleReview} />
+      {tasks.length > 0 ? (
+        <TaskBubblesPanel onReview={handleReview} tasks={tasks} />
+      ) : (
+        <p className="text-center text-foam-muted">Задачи загружаются...</p>
+      )}
 
       <GrowthHistory />
     </main>
