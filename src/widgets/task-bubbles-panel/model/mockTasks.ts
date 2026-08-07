@@ -40,24 +40,37 @@ const TITLES = [
   "Программирование: полная задача",
 ];
 
-const COLORS: readonly MemoryColor[] = ["none", "blue", "green", "yellow", "orange", "red", "black"];
+const COLORS: readonly MemoryColor[] = [
+  "none",
+  "blue",
+  "green",
+  "yellow",
+  "orange",
+  "red",
+  "black",
+];
 
 export function getMockTaskBubbles(): MockTaskBubble[] {
-  return TITLES.map((title, index): MockTaskBubble => {
-    const number = index + 1;
-    const color = COLORS[index % COLORS.length] as MemoryColor;
-    const repetitions = color === "none" ? 0 : (index % 6) + 1;
-    const reviewedToday = index % 9 === 0 && color !== "none";
+  const result: MockTaskBubble[] = [];
 
-    return {
+  for (let i = 0; i < TITLES.length; i++) {
+    const title = TITLES[i];
+    const number = i + 1;
+    const color = COLORS[i % COLORS.length]!;
+    const repetitions = color === "none" ? 0 : (i % 6) + 1;
+    const reviewedToday = i % 9 === 0 && color !== "none";
+
+    result.push({
       taskTypeId: `task-${number}`,
       number,
       title,
       color,
       repetitions,
       lastReviewLabel:
-        color === "none" ? "ещё не начато" : `повторено ${(index % 6) + 1} дн. назад`,
+        color === "none" ? "ещё не начато" : `повторено ${(i % 6) + 1} дн. назад`,
       reviewedToday,
-    };
-  });
+    });
+  }
+
+  return result;
 }
