@@ -10,7 +10,6 @@ export interface MockTaskBubble {
   reviewedToday: boolean;
 }
 
-// Демо-данные для первого экрана — реальные данные придут из TaskMemory (Prisma) через API.
 const TITLES = [
   "Анализ диаграмм и таблиц",
   "Преобразование логического выражения",
@@ -39,11 +38,9 @@ const TITLES = [
   "Обработка последовательности символов",
   "Игры: анализ выигрышной стратегии",
   "Программирование: полная задача",
-];
+] as const;
 
-const COLORS: MemoryColor[] = [
-  "none", "blue", "green", "yellow", "orange", "red", "black",
-];
+const COLORS = ["none", "blue", "green", "yellow", "orange", "red", "black"] as const satisfies readonly MemoryColor[];
 
 export function getMockTaskBubbles(): MockTaskBubble[] {
   return TITLES.map((title, index) => {
