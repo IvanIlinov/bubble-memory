@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/shared/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +12,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Получаем текущую память задачи
     const memory = await prisma.taskMemory.findUnique({
       where: {
         userId_taskTypeId: { userId, taskTypeId },
@@ -28,7 +25,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Простое увеличение повторений
     const updated = await prisma.taskMemory.update({
       where: { id: memory.id },
       data: {
