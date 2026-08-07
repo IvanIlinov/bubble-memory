@@ -1,28 +1,24 @@
-// Bubble Memory — Prisma schema
-// Сущности зафиксированы в ТЗ (раздел "Основные сущности").
-// Хостинг БД — в РФ (см. ТЗ, "Безопасность и приватность").
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum BubbleTier {
-  WOODEN // Деревянный — 0
-  STONE // Каменный — 25
-  BRONZE // Бронзовый — 75
-  IRON // Железный — 150
-  STEEL // Стальной — 300
-  TITANIUM // Титановый — 500
-  CRYSTAL // Кристальный — 800
-  DIAMOND // Алмазный — 1200
+  WOODEN
+  STONE
+  BRONZE
+  IRON
+  STEEL
+  TITANIUM
+  CRYSTAL
+  DIAMOND
 }
 
-// Зарезервировано на будущее (см. ТЗ: "роль преподавателя — не в MVP").
 enum UserRole {
   STUDENT
   TEACHER
@@ -35,21 +31,18 @@ model User {
 
   username    String?
   displayName String?
-
-  nickname String @unique // публичный, редактируемый, отдельно от Telegram username
+  nickname String @unique
 
   bubbleTier BubbleTier @default(WOODEN)
   streak     Int        @default(0)
   totalSolved Int       @default(0)
 
   timezone String @default("Europe/Moscow")
-
   notificationsEnabled Boolean @default(true)
-  notificationTime     String  @default("19:00") // "HH:mm" в timezone пользователя
+  notificationTime     String  @default("19:00")
 
-  role UserRole @default(STUDENT) // зарезервировано, не используется в логике MVP
-
-  consentGivenAt DateTime? // экран согласия — последним, перед публичным запуском
+  role UserRole @default(STUDENT)
+  consentGivenAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,10 +54,9 @@ model User {
   yearBubbles    YearBubble[]
 }
 
-// Лёгкий справочник заданий ЕГЭ — только для подписи бабла, без контента/ответов.
 model TaskType {
   id     String @id @default(cuid())
-  number Int    @unique // 1..27, конфигурируемо
+  number Int    @unique
   title  String
 
   memories   TaskMemory[]
@@ -91,7 +83,6 @@ model TaskMemory {
   @@unique([userId, taskTypeId])
 }
 
-// Для undo, streak и антиспам-проверки "раз в день".
 model ReviewLog {
   id String @id @default(cuid())
 
@@ -114,7 +105,7 @@ model WeeklyBubble {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  week String // ISO-неделя, формат "GGGG-[W]WW", напр. "2026-W32"
+  week String
 
   solvedCount Int @default(0)
   targetCount Int @default(0)
@@ -128,7 +119,7 @@ model MonthlyBubble {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  month String // "YYYY-MM"
+  month String
 
   solvedCount Int @default(0)
 
