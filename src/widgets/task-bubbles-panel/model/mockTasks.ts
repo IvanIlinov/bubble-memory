@@ -38,14 +38,14 @@ const TITLES = [
   "Обработка последовательности символов",
   "Игры: анализ выигрышной стратегии",
   "Программирование: полная задача",
-] as const;
+];
 
-const COLORS = ["none", "blue", "green", "yellow", "orange", "red", "black"] as const satisfies readonly MemoryColor[];
+const COLORS: readonly MemoryColor[] = ["none", "blue", "green", "yellow", "orange", "red", "black"];
 
 export function getMockTaskBubbles(): MockTaskBubble[] {
-  return TITLES.map((title, index) => {
+  return TITLES.map((title, index): MockTaskBubble => {
     const number = index + 1;
-    const color = COLORS[index % COLORS.length];
+    const color = COLORS[index % COLORS.length] as MemoryColor;
     const repetitions = color === "none" ? 0 : (index % 6) + 1;
     const reviewedToday = index % 9 === 0 && color !== "none";
 
