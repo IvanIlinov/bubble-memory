@@ -28,25 +28,19 @@ enum UserRole {
 model User {
   id       String  @id @default(cuid())
   telegramId String @unique
-
   username    String?
   displayName String?
   nickname String @unique
-
   bubbleTier BubbleTier @default(WOODEN)
   streak     Int        @default(0)
   totalSolved Int       @default(0)
-
   timezone String @default("Europe/Moscow")
   notificationsEnabled Boolean @default(true)
   notificationTime     String  @default("19:00")
-
   role UserRole @default(STUDENT)
   consentGivenAt DateTime?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   memories       TaskMemory[]
   reviewLogs     ReviewLog[]
   weeklyBubbles  WeeklyBubble[]
@@ -58,83 +52,61 @@ model TaskType {
   id     String @id @default(cuid())
   number Int    @unique
   title  String
-
   memories   TaskMemory[]
   reviewLogs ReviewLog[]
 }
 
 model TaskMemory {
   id String @id @default(cuid())
-
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskTypeId String
   taskType   TaskType @relation(fields: [taskTypeId], references: [id])
-
   repetitions Int @default(0)
   intervalDays Int @default(0)
-
   lastReview DateTime?
   nextReview DateTime?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@unique([userId, taskTypeId])
 }
 
 model ReviewLog {
   id String @id @default(cuid())
-
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskTypeId String
   taskType   TaskType @relation(fields: [taskTypeId], references: [id])
-
   reviewedAt DateTime @default(now())
-
   previousIntervalDays Int
   previousNextReview   DateTime?
-
   @@index([userId, taskTypeId, reviewedAt])
 }
 
 model WeeklyBubble {
   id String @id @default(cuid())
-
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   week String
-
   solvedCount Int @default(0)
   targetCount Int @default(0)
-
   @@unique([userId, week])
 }
 
 model MonthlyBubble {
   id String @id @default(cuid())
-
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   month String
-
   solvedCount Int @default(0)
-
   @@unique([userId, month])
 }
 
 model YearBubble {
   id String @id @default(cuid())
-
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   year Int
-
   solvedCount Int @default(0)
-
   @@unique([userId, year])
 }
