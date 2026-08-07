@@ -52,13 +52,13 @@ const COLORS: readonly MemoryColor[] = [
 
 export function getMockTaskBubbles(): MockTaskBubble[] {
   const result: MockTaskBubble[] = [];
+  let index = 0;
 
-  for (let i = 0; i < TITLES.length; i++) {
-    const title = TITLES[i];
-    const number = i + 1;
-    const color = COLORS[i % COLORS.length]!;
-    const repetitions = color === "none" ? 0 : (i % 6) + 1;
-    const reviewedToday = i % 9 === 0 && color !== "none";
+  for (const title of TITLES) {
+    const number = index + 1;
+    const color = COLORS[index % COLORS.length]!;
+    const repetitions = color === "none" ? 0 : (index % 6) + 1;
+    const reviewedToday = index % 9 === 0 && color !== "none";
 
     result.push({
       taskTypeId: `task-${number}`,
@@ -67,9 +67,11 @@ export function getMockTaskBubbles(): MockTaskBubble[] {
       color,
       repetitions,
       lastReviewLabel:
-        color === "none" ? "ещё не начато" : `повторено ${(i % 6) + 1} дн. назад`,
+        color === "none" ? "ещё не начато" : `повторено ${(index % 6) + 1} дн. назад`,
       reviewedToday,
     });
+
+    index++;
   }
 
   return result;
