@@ -23,6 +23,7 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [lastReviewLog, setLastReviewLog] = useState<string>("");
 
   useEffect(() => {
     async function init() {
@@ -110,39 +111,29 @@ export default function HomePage() {
   }, []);
 
   async function handleReview(taskTypeId: string) {
-    console.log("🎯 Review clicked:", taskTypeId, "userId:", userId);
+    const msg = `Клик: ${taskTypeId}, userID: ${userId}`;
+    setLastReviewLog(msg);
+    console.log("🎯", msg);
     setSolvedCount((v) => v + 1);
 
     if (!userId) {
-      console.warn("❌ No userId!");
+      setLastReviewLog("❌ Нет userId!");
       return;
     }
 
     try {
-      const body = { userId, taskTypeId };
-      console.log("📤 Sending review:", body);
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2000);
-
       const response = await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: controller.signal,
+        body: JSON.stringify({ userId, taskTypeId }),
       });
 
-      clearTimeout(timeout);
-      console.log("📥 Review response:", response.status);
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error("❌ Review error:", error);
-      } else {
-        console.log("✅ Review saved");
-      }
+      const log = response.ok ? "✅ OK" : `❌ ${response.status}`;
+      setLastReviewLog(log);
+      console.log(log);
     } catch (error) {
-      console.error("❌ Review failed:", error);
+      setLastReviewLog(`❌ ${error}`);
+      console.error("Review failed:", error);
     }
   }
 
@@ -172,6 +163,12 @@ export default function HomePage() {
       {user && (
         <div className="text-center text-sm text-foam">
           Привет, {user.first_name}!
+        </div>
+      )}
+
+      {lastReviewLog && (
+        <div className="text-center text-[10px] text-foam-muted bg-deep-panel/50 p-1 rounded">
+          {lastReviewLog}
         </div>
       )}
 
