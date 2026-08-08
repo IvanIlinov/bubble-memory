@@ -13,11 +13,10 @@ import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTask
 
 export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(0);
-  const [targetCount, setTargetCount] = useState(27);
   const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tier, setTier] = useState("Деревянный");
+  const [debug, setDebug] = useState<string>("");
 
   useEffect(() => {
     const tg = getTelegramWebApp();
@@ -31,8 +30,10 @@ export default function HomePage() {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
+        setDebug(`initData: ${initData.length}, user: ${telegramUser?.first_name}`);
+
         if (!initData || !telegramUser) {
-          console.warn("No Telegram data");
+          setDebug("No Telegram data");
           setLoading(false);
           return;
         }
@@ -44,27 +45,30 @@ export default function HomePage() {
         });
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          setDebug(`API error: ${response.status}`);
+          setLoading(false);
+          return;
         }
 
         const data = await response.json();
+        setDebug(`Got ${data.tasks?.length || 0} tasks from API`);
+        
         setUser(data.user);
         
-        // Конвертируем в формат MockTaskBubble
-        const convertedTasks: MockTaskBubble[] = data.tasks.map((t: any) => ({
+        const convertedTasks: MockTaskBubble[] = (data.tasks || []).map((t: any) => ({
           taskTypeId: t.taskTypeId,
           number: t.number,
           title: t.title,
           repetitions: t.repetitions,
           color: "none" as const,
-          lastReviewLabel: t.lastReview ? `повторено недавно` : "ещё не начато",
+          lastReviewLabel: "не начато",
           reviewedToday: false,
         }));
         
         setTasks(convertedTasks);
-        setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
+        setSolvedCount(0);
       } catch (error) {
-        console.error("Failed to load tasks:", error);
+        setDebug(`Error: ${error}`);
       } finally {
         setLoading(false);
       }
@@ -74,14 +78,13 @@ export default function HomePage() {
   }, []);
 
   function handleReview(taskTypeId: string) {
-    // TODO: вызвать POST /api/review
-    setSolvedCount((v) => Math.min(v + 1, targetCount));
+    setSolvedCount((v) => v + 1);
   }
 
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
-        <p className="text-foam-muted">Загружаю твои задачи...</p>
+        <p className="text-foam-muted">Загружаю...</p>
       </main>
     );
   }
@@ -94,18 +97,23 @@ export default function HomePage() {
           <p className="text-xs text-foam-muted">не выполняй задания — заботься о памяти</p>
         </div>
         <div className="rounded-full bg-deep-panel px-3 py-1 text-xs text-gold ring-1 ring-gold/30">
-          {tier}
+          Деревянный
         </div>
       </header>
 
       {user && (
         <div className="text-center text-sm text-foam">
-          Привет, <span className="font-semibold">{user.first_name}</span>!
+          Привет, {user.first_name}!
         </div>
       )}
 
+      {/* ДЕБАГ */}
+      <div className="text-center text-[10px] text-foam-muted bg-deep-panel/50 p-2 rounded">
+        Tasks: {tasks.length} | {debug}
+      </div>
+
       <div className="flex justify-center">
-        <WeekBubble solvedCount={solvedCount} targetCount={tasks.length} />
+        <WeekBubble solvedCount={solvedCount} targetCount={tasks.length || 27} />
       </div>
 
       {tasks.length > 0 && (
