@@ -32,25 +32,38 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${display.variable} ${body.variable}`}>
       <head>
-        {/* Telegram WebApp SDK — INLINE for reliability */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function() {
+              console.log('📍 Layout script executing');
+              console.log('window.Telegram before:', typeof window.Telegram);
+              
+              // Проверяем есть ли уже Telegram
+              if (window.Telegram?.WebApp) {
+                console.log('✓ window.Telegram.WebApp уже доступна!');
+                window.Telegram.WebApp.ready?.();
+              } else {
+                console.log('⏳ Telegram SDK ещё не загружен, загружаем...');
+                
+                // Пробуем загрузить
                 const script = document.createElement('script');
                 script.src = 'https://telegram.org/js/telegram-web-app.js';
-                script.onload = function() {
-                  console.log('✓ Telegram SDK loaded');
+                script.async = true;
+                
+                script.onload = () => {
+                  console.log('✓ SDK script loaded');
                   if (window.Telegram?.WebApp) {
                     console.log('✓ window.Telegram.WebApp ready');
-                    window.Telegram.WebApp.ready();
+                    window.Telegram.WebApp.ready?.();
                   }
                 };
-                script.onerror = function() {
-                  console.error('✗ Failed to load Telegram SDK');
+                
+                script.onerror = (e) => {
+                  console.error('✗ SDK load error:', e);
                 };
+                
                 document.head.appendChild(script);
-              })();
+              }
             `,
           }}
         />
