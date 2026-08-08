@@ -23,12 +23,14 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     async function init() {
       try {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
+        setStatus(`TG: ${initData.length > 0 ? "✓" : "✗"}`);
 
         const cached = getCachedTasks();
         if (cached) {
@@ -47,6 +49,7 @@ export default function HomePage() {
           );
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
           setLoading(false);
+          setStatus("✓ Cache");
 
           if (isMobile()) {
             return;
@@ -58,9 +61,11 @@ export default function HomePage() {
           setTasks(mocks);
           setUser({ first_name: "Guest" });
           setLoading(false);
+          setStatus("⚠️ Mocks");
           return;
         }
 
+        setStatus("🔄 Fetching...");
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 5000);
 
@@ -98,9 +103,12 @@ export default function HomePage() {
 
           setTasks(convertedTasks);
           setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
+          setStatus(`✓ ${convertedTasks.length} tasks`);
+        } else {
+          setStatus(`✗ API ${response.status}`);
         }
       } catch (error) {
-        console.error("Init error:", error);
+        setStatus(`✗ ${error}`);
       } finally {
         setLoading(false);
       }
@@ -110,10 +118,13 @@ export default function HomePage() {
   }, []);
 
   async function handleReview(taskTypeId: string) {
-    // Оптимистичное обновление UI
     setSolvedCount((v) => v + 1);
+    setStatus(`📤 saving...`);
 
-    if (!userId) return;
+    if (!userId) {
+      setStatus(`✗ no userId`);
+      return;
+    }
 
     try {
       const response = await fetch("/api/review", {
@@ -123,13 +134,15 @@ export default function HomePage() {
       });
 
       if (response.ok) {
-        // При успешном клике — очищаем кеш
-        // Следующая загрузка будет из БД со свежими данными
+        setStatus(`✓ saved`);
         if (typeof window !== "undefined") {
           localStorage.removeItem("bubble-memory-tasks");
         }
+      } else {
+        setStatus(`✗ ${response.status}`);
       }
     } catch (error) {
+      setStatus(`✗ error`);
       console.error("Review failed:", error);
     }
   }
@@ -140,6 +153,7 @@ export default function HomePage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
           <p className="text-foam-muted">Загружаю...</p>
+          <p className="text-[10px] text-foam-muted/60 mt-2">{status}</p>
         </div>
       </main>
     );
@@ -158,8 +172,9 @@ export default function HomePage() {
       </header>
 
       {user && (
-        <div className="text-center text-sm text-foam">
-          Привет, {user.first_name}!
+        <div className="text-center">
+          <p className="text-sm text-foam">Привет, {user.first_name}!</p>
+          <p className="text-[9px] text-foam-muted/50">{status}</p>
         </div>
       )}
 
