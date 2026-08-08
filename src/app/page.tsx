@@ -7,7 +7,6 @@ import { GrowthHistory } from "@/widgets/growth-history/ui/GrowthHistory";
 import {
   getTelegramUser,
   getTelegramInitData,
-  debugTelegram,
 } from "@/shared/lib/telegram";
 import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
 import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
@@ -32,7 +31,6 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    // Перенаправляем console.log в наш UI
     const originalLog = console.log;
     console.log = function(...args: any[]) {
       originalLog(...args);
@@ -42,7 +40,6 @@ export default function HomePage() {
 
     const startTime = performance.now();
     log("🚀 Init start");
-    debugTelegram();
 
     const checkTelegram = () => {
       const mobile = isMobile();
