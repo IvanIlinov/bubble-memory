@@ -23,59 +23,12 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("");
-
-  async function loadTasksFromServer() {
-    try {
-      const initData = getTelegramInitData();
-      if (!initData) return;
-
-      const response = await fetch("/api/tasks", {
-        headers: {
-          "x-telegram-init-data": initData,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Кешируем свежие данные
-        setCachedTasks({
-          userId: data.userId,
-          user: data.user,
-          tasks: data.tasks,
-          timestamp: Date.now(),
-        });
-
-        setUser(data.user);
-        setUserId(data.userId);
-
-        const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
-          (t: any) => ({
-            taskTypeId: t.taskTypeId,
-            number: t.number,
-            title: t.title,
-            repetitions: t.repetitions,
-            color: "none" as const,
-            lastReviewLabel: "не начато",
-            reviewedToday: false,
-          })
-        );
-
-        setTasks(convertedTasks);
-        setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
-      }
-    } catch (error) {
-      console.error("Load error:", error);
-    }
-  }
 
   useEffect(() => {
     async function init() {
       try {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
-        setStatus(`TG: ${initData.length > 0 ? "✓" : "✗"}`);
 
         const cached = getCachedTasks();
         if (cached) {
@@ -94,7 +47,6 @@ export default function HomePage() {
           );
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
           setLoading(false);
-          setStatus("✓ Cache");
 
           if (isMobile()) {
             return;
@@ -106,15 +58,49 @@ export default function HomePage() {
           setTasks(mocks);
           setUser({ first_name: "Guest" });
           setLoading(false);
-          setStatus("⚠️ Mocks");
           return;
         }
 
-        // Загружаем реальные данные
-        await loadTasksFromServer();
-        setStatus("✓ Loaded");
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch("/api/tasks", {
+          headers: {
+            "x-telegram-init-data": initData,
+          },
+          signal: controller.signal,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          setCachedTasks({
+            userId: data.userId,
+            user: data.user,
+            tasks: data.tasks,
+            timestamp: Date.now(),
+          });
+
+          setUser(data.user);
+          setUserId(data.userId);
+
+          const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
+            (t: any) => ({
+              taskTypeId: t.taskTypeId,
+              number: t.number,
+              title: t.title,
+              repetitions: t.repetitions,
+              color: "none" as const,
+              lastReviewLabel: "не начато",
+              reviewedToday: false,
+            })
+          );
+
+          setTasks(convertedTasks);
+          setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
+        }
       } catch (error) {
-        setStatus(`✗ ${error}`);
+        console.error("Init error:", error);
       } finally {
         setLoading(false);
       }
@@ -124,30 +110,23 @@ export default function HomePage() {
   }, []);
 
   async function handleReview(taskTypeId: string) {
+    // Оптимистичное обновление
     setSolvedCount((v) => v + 1);
-    setStatus(`📤 saving...`);
 
-    if (!userId) {
-      setStatus(`✗ no userId`);
-      return;
-    }
+    if (!userId) return;
 
     try {
-      const response = await fetch("/api/review", {
+      await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, taskTypeId }),
       });
 
-      if (response.ok) {
-        setStatus(`✓ saved`);
-        // После успешного клика — перезагружаем данные со сервера
-        setTimeout(() => loadTasksFromServer(), 500);
-      } else {
-        setStatus(`✗ ${response.status}`);
+      // Очищаем кеш, чтобы при перезагрузке были свежие данные
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("bubble-memory-tasks");
       }
     } catch (error) {
-      setStatus(`✗ error`);
       console.error("Review failed:", error);
     }
   }
@@ -158,7 +137,6 @@ export default function HomePage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
           <p className="text-foam-muted">Загружаю...</p>
-          <p className="text-[10px] text-foam-muted/60 mt-2">{status}</p>
         </div>
       </main>
     );
@@ -177,9 +155,8 @@ export default function HomePage() {
       </header>
 
       {user && (
-        <div className="text-center">
-          <p className="text-sm text-foam">Привет, {user.first_name}!</p>
-          <p className="text-[9px] text-foam-muted/50">{status}</p>
+        <div className="text-center text-sm text-foam">
+          Привет, {user.first_name}!
         </div>
       )}
 
