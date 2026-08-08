@@ -11,6 +11,8 @@ import {
 } from "@/shared/lib/telegram";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
+const FETCH_TIMEOUT = 5000; // 5 сек максимум
+
 export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(0);
   const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
@@ -21,7 +23,6 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
-        // Ждём инициализации WebApp (важно на мобильном)
         const tg = await waitForTelegramWebApp();
         tg.ready();
         tg.expand();
@@ -30,16 +31,22 @@ export default function HomePage() {
         const telegramUser = getTelegramUser();
 
         if (!initData || !telegramUser) {
-          console.warn("No Telegram data");
           setLoading(false);
           return;
         }
+
+        // Fetch с timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
         const response = await fetch("/api/tasks", {
           headers: {
             "x-telegram-init-data": initData,
           },
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           setLoading(false);
@@ -76,10 +83,14 @@ export default function HomePage() {
     if (!userId) return;
 
     try {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 3000);
+
       await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, taskTypeId }),
+        signal: controller.signal,
       });
       setSolvedCount((v) => v + 1);
     } catch (error) {
@@ -90,7 +101,10 @@ export default function HomePage() {
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
-        <p className="text-foam-muted">Загружаю...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
+          <p className="text-foam-muted text-sm">Загружаю...</p>
+        </div>
       </main>
     );
   }
