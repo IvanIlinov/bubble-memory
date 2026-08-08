@@ -15,8 +15,8 @@ export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(0);
   const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [debug, setDebug] = useState<string>("");
 
   useEffect(() => {
     const tg = getTelegramWebApp();
@@ -30,10 +30,7 @@ export default function HomePage() {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
-        setDebug(`initData: ${initData.length}, user: ${telegramUser?.first_name}`);
-
         if (!initData || !telegramUser) {
-          setDebug("No Telegram data");
           setLoading(false);
           return;
         }
@@ -45,15 +42,13 @@ export default function HomePage() {
         });
 
         if (!response.ok) {
-          setDebug(`API error: ${response.status}`);
           setLoading(false);
           return;
         }
 
         const data = await response.json();
-        setDebug(`Got ${data.tasks?.length || 0} tasks from API`);
-        
         setUser(data.user);
+        setUserId(data.userId);
         
         const convertedTasks: MockTaskBubble[] = (data.tasks || []).map((t: any) => ({
           taskTypeId: t.taskTypeId,
@@ -66,9 +61,9 @@ export default function HomePage() {
         }));
         
         setTasks(convertedTasks);
-        setSolvedCount(0);
+        setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
       } catch (error) {
-        setDebug(`Error: ${error}`);
+        console.error("Error loading tasks:", error);
       } finally {
         setLoading(false);
       }
@@ -77,8 +72,29 @@ export default function HomePage() {
     loadTasks();
   }, []);
 
-  function handleReview(taskTypeId: string) {
-    setSolvedCount((v) => v + 1);
+  async function handleReview(taskTypeId: string) {
+    if (!userId) return;
+
+    try {
+      const response = await fetch("/api/review", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          taskTypeId,
+        }),
+      });
+
+      if (response.ok) {
+        // Обновляем локальный счетчик
+        setSolvedCount((v) => v + 1);
+        console.log("✅ Review saved");
+      }
+    } catch (error) {
+      console.error("Failed to save review:", error);
+    }
   }
 
   if (loading) {
@@ -106,11 +122,6 @@ export default function HomePage() {
           Привет, {user.first_name}!
         </div>
       )}
-
-      {/* ДЕБАГ */}
-      <div className="text-center text-[10px] text-foam-muted bg-deep-panel/50 p-2 rounded">
-        Tasks: {tasks.length} | {debug}
-      </div>
 
       <div className="flex justify-center">
         <WeekBubble solvedCount={solvedCount} targetCount={tasks.length || 27} />
