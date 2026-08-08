@@ -17,12 +17,16 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [debug, setDebug] = useState<string>("");
 
   useEffect(() => {
     const tg = getTelegramWebApp();
+    console.log("🔧 TG WebApp:", tg ? "OK" : "NONE");
+    
     if (tg) {
       tg.ready();
       tg.expand();
+      setDebug(`TG: OK | `);
     }
 
     async function loadTasks() {
@@ -30,7 +34,13 @@ export default function HomePage() {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
+        console.log("📱 initData:", initData?.substring(0, 50));
+        console.log("👤 user:", telegramUser);
+        
+        setDebug(prev => prev + `initData: ${initData?.length || 0} | user: ${telegramUser?.first_name || "?"}`);
+
         if (!initData || !telegramUser) {
+          setDebug(prev => prev + " | NO DATA");
           setLoading(false);
           return;
         }
@@ -41,12 +51,17 @@ export default function HomePage() {
           },
         });
 
+        console.log("📡 Response:", response.status);
+        setDebug(prev => prev + ` | API: ${response.status}`);
+
         if (!response.ok) {
           setLoading(false);
           return;
         }
 
         const data = await response.json();
+        console.log("✅ Data:", data);
+        
         setUser(data.user);
         setUserId(data.userId);
         
@@ -62,8 +77,10 @@ export default function HomePage() {
         
         setTasks(convertedTasks);
         setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
+        setDebug(prev => prev + ` | Tasks: ${convertedTasks.length}`);
       } catch (error) {
-        console.error("Error loading tasks:", error);
+        console.error("❌ Error:", error);
+        setDebug(prev => prev + ` | Error: ${error}`);
       } finally {
         setLoading(false);
       }
@@ -88,9 +105,7 @@ export default function HomePage() {
       });
 
       if (response.ok) {
-        // Обновляем локальный счетчик
         setSolvedCount((v) => v + 1);
-        console.log("✅ Review saved");
       }
     } catch (error) {
       console.error("Failed to save review:", error);
@@ -100,7 +115,10 @@ export default function HomePage() {
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
-        <p className="text-foam-muted">Загружаю...</p>
+        <div className="text-center">
+          <p className="text-foam-muted mb-2">Загружаю...</p>
+          <p className="text-[10px] text-foam-muted">{debug}</p>
+        </div>
       </main>
     );
   }
@@ -116,6 +134,11 @@ export default function HomePage() {
           Деревянный
         </div>
       </header>
+
+      {/* ДЕБАГ ИНФОРМАЦИЯ */}
+      <div className="text-center text-[9px] text-foam-muted bg-deep-panel/50 p-1 rounded">
+        {debug}
+      </div>
 
       {user && (
         <div className="text-center text-sm text-foam">
