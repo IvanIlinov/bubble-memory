@@ -7,60 +7,65 @@ export interface TelegramUser {
   is_premium?: boolean;
 }
 
-export interface TelegramWebApp {
-  initData: string;
-  initDataUnsafe: {
-    user?: TelegramUser;
-    auth_date: number;
-    hash: string;
-  };
-  ready: () => void;
-  expand: () => void;
-}
+export function getTelegramInitData(): string {
+  if (typeof window === "undefined") return "";
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: TelegramWebApp;
-    };
+  // Способ 1: попробуем window.Telegram (может быть загружено позже)
+  if (window.Telegram?.WebApp?.initData) {
+    console.log("✓ initData from window.Telegram.WebApp");
+    return window.Telegram.WebApp.initData;
   }
-}
 
-export function getTelegramWebApp(): TelegramWebApp | null {
-  if (typeof window === "undefined") return null;
-  const tg = window.Telegram?.WebApp;
-  console.log("🔍 getTelegramWebApp:", {
-    exists: !!tg,
-    hasInitData: !!tg?.initData,
-    initDataLength: tg?.initData?.length || 0,
-    hasUser: !!tg?.initDataUnsafe?.user,
+  // Способ 2: может быть в URL параметрах
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("initData") || params.get("tgWebAppData");
+    if (fromUrl) {
+      console.log("✓ initData from URL params");
+      return fromUrl;
+    }
+  } catch (e) {
+    console.log("URL params error:", e);
+  }
+
+  // Способ 3: может быть в hash
+  try {
+    const hash = new URLSearchParams(window.location.hash.substring(1));
+    const fromHash = hash.get("initData") || hash.get("tgWebAppData");
+    if (fromHash) {
+      console.log("✓ initData from URL hash");
+      return fromHash;
+    }
+  } catch (e) {
+    console.log("Hash error:", e);
+  }
+
+  console.log("✗ initData not found");
+  console.log("  window.location:", {
+    href: window.location.href.substring(0, 100),
+    search: window.location.search.substring(0, 100),
+    hash: window.location.hash.substring(0, 100),
   });
-  return tg ?? null;
+  console.log("  window.Telegram:", typeof window.Telegram);
+
+  return "";
 }
 
 export function getTelegramUser(): TelegramUser | null {
-  const webApp = getTelegramWebApp();
-  const user = webApp?.initDataUnsafe?.user ?? null;
-  console.log("🔍 getTelegramUser:", user);
-  return user;
-}
+  const initData = getTelegramInitData();
+  if (!initData) return null;
 
-export function getTelegramInitData(): string {
-  const webApp = getTelegramWebApp();
-  const data = webApp?.initData ?? "";
-  console.log("🔍 getTelegramInitData length:", data.length);
-  return data;
-}
-
-export function debugTelegram() {
-  console.log("🔍 === DEBUG TELEGRAM ===");
-  console.log("window.Telegram:", typeof window !== "undefined" ? window.Telegram : "N/A");
-  console.log("window.Telegram?.WebApp:", typeof window !== "undefined" ? window.Telegram?.WebApp : "N/A");
-  
-  const tg = getTelegramWebApp();
-  if (tg) {
-    console.log("initData:", tg.initData?.substring(0, 50) + "...");
-    console.log("initDataUnsafe:", tg.initDataUnsafe);
+  try {
+    const params = new URLSearchParams(initData);
+    const userStr = params.get("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      console.log("✓ Telegram user:", user.first_name);
+      return user;
+    }
+  } catch (e) {
+    console.log("User parse error:", e);
   }
-  console.log("🔍 === END DEBUG ===");
+
+  return null;
 }
