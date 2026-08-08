@@ -7,16 +7,34 @@ export interface TelegramUser {
   is_premium?: boolean;
 }
 
+export interface TelegramWebApp {
+  initData: string;
+  initDataUnsafe: {
+    user?: TelegramUser;
+    auth_date: number;
+    hash: string;
+  };
+  ready: () => void;
+  expand: () => void;
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: TelegramWebApp;
+    };
+  }
+}
+
 export function getTelegramInitData(): string {
   if (typeof window === "undefined") return "";
 
-  // Способ 1: попробуем window.Telegram (может быть загружено позже)
-  if (window.Telegram?.WebApp?.initData) {
+  const tg = (window as any).Telegram?.WebApp?.initData;
+  if (tg) {
     console.log("✓ initData from window.Telegram.WebApp");
-    return window.Telegram.WebApp.initData;
+    return tg;
   }
 
-  // Способ 2: может быть в URL параметрах
   try {
     const params = new URLSearchParams(window.location.search);
     const fromUrl = params.get("initData") || params.get("tgWebAppData");
@@ -28,7 +46,6 @@ export function getTelegramInitData(): string {
     console.log("URL params error:", e);
   }
 
-  // Способ 3: может быть в hash
   try {
     const hash = new URLSearchParams(window.location.hash.substring(1));
     const fromHash = hash.get("initData") || hash.get("tgWebAppData");
@@ -46,7 +63,6 @@ export function getTelegramInitData(): string {
     search: window.location.search.substring(0, 100),
     hash: window.location.hash.substring(0, 100),
   });
-  console.log("  window.Telegram:", typeof window.Telegram);
 
   return "";
 }
