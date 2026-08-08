@@ -11,7 +11,7 @@ import {
 } from "@/shared/lib/telegram";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
-const FETCH_TIMEOUT = 5000; // 5 сек максимум
+const FETCH_TIMEOUT = 5000;
 
 export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(0);
@@ -35,7 +35,6 @@ export default function HomePage() {
           return;
         }
 
-        // Fetch с timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
@@ -82,6 +81,10 @@ export default function HomePage() {
   async function handleReview(taskTypeId: string) {
     if (!userId) return;
 
+    // 🔑 ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ: сразу же увеличиваем счётчик
+    setSolvedCount((v) => v + 1);
+
+    // Запрос идёт в фоне, результат не ждём
     try {
       const controller = new AbortController();
       setTimeout(() => controller.abort(), 3000);
@@ -92,9 +95,10 @@ export default function HomePage() {
         body: JSON.stringify({ userId, taskTypeId }),
         signal: controller.signal,
       });
-      setSolvedCount((v) => v + 1);
     } catch (error) {
       console.error("Review error:", error);
+      // Если ошибка — откатываем (опционально)
+      // setSolvedCount((v) => v - 1);
     }
   }
 
