@@ -12,28 +12,27 @@ import {
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
 export default function HomePage() {
-  const [solvedCount, setSolvedCount] = useState(8);
-  const targetCount = 14;
+  const [solvedCount, setSolvedCount] = useState(0);
+  const [targetCount, setTargetCount] = useState(27);
   const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [tier, setTier] = useState("Деревянный");
 
   useEffect(() => {
-    // Инициализируем Telegram WebApp
     const tg = getTelegramWebApp();
     if (tg) {
       tg.ready();
       tg.expand();
     }
 
-    // Загружаем задачи пользователя
     async function loadTasks() {
       try {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
         if (!initData || !telegramUser) {
-          console.warn("No Telegram data available");
+          console.warn("No Telegram data");
           setLoading(false);
           return;
         }
@@ -50,7 +49,20 @@ export default function HomePage() {
 
         const data = await response.json();
         setUser(data.user);
-        setTasks(data.tasks);
+        
+        // Конвертируем в формат MockTaskBubble
+        const convertedTasks: MockTaskBubble[] = data.tasks.map((t: any) => ({
+          taskTypeId: t.taskTypeId,
+          number: t.number,
+          title: t.title,
+          repetitions: t.repetitions,
+          color: "none" as const,
+          lastReviewLabel: t.lastReview ? `повторено недавно` : "ещё не начато",
+          reviewedToday: false,
+        }));
+        
+        setTasks(convertedTasks);
+        setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
       } catch (error) {
         console.error("Failed to load tasks:", error);
       } finally {
@@ -61,7 +73,8 @@ export default function HomePage() {
     loadTasks();
   }, []);
 
-  function handleReview() {
+  function handleReview(taskTypeId: string) {
+    // TODO: вызвать POST /api/review
     setSolvedCount((v) => Math.min(v + 1, targetCount));
   }
 
@@ -73,8 +86,6 @@ export default function HomePage() {
     );
   }
 
-  const tierLabel = "Каменный"; // позже из БД
-
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-8 px-4 pb-10 pt-8">
       <header className="flex items-center justify-between">
@@ -83,24 +94,22 @@ export default function HomePage() {
           <p className="text-xs text-foam-muted">не выполняй задания — заботься о памяти</p>
         </div>
         <div className="rounded-full bg-deep-panel px-3 py-1 text-xs text-gold ring-1 ring-gold/30">
-          {tierLabel}
+          {tier}
         </div>
       </header>
 
       {user && (
-        <div className="text-center text-sm text-foam-muted">
-          Привет, {user.first_name}!
+        <div className="text-center text-sm text-foam">
+          Привет, <span className="font-semibold">{user.first_name}</span>!
         </div>
       )}
 
       <div className="flex justify-center">
-        <WeekBubble solvedCount={solvedCount} targetCount={targetCount} />
+        <WeekBubble solvedCount={solvedCount} targetCount={tasks.length} />
       </div>
 
-      {tasks.length > 0 ? (
+      {tasks.length > 0 && (
         <TaskBubblesPanel onReview={handleReview} tasks={tasks} />
-      ) : (
-        <p className="text-center text-foam-muted">Задачи загружаются...</p>
       )}
 
       <GrowthHistory />
