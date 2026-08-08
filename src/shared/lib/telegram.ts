@@ -40,3 +40,32 @@ export function getTelegramInitData(): string {
   const webApp = getTelegramWebApp();
   return webApp?.initData ?? "";
 }
+
+// Ждём инициализации WebApp
+export function waitForTelegramWebApp(): Promise<TelegramWebApp> {
+  return new Promise((resolve) => {
+    const tg = getTelegramWebApp();
+    if (tg && tg.initData) {
+      resolve(tg);
+      return;
+    }
+
+    // Ждём события ready от WebApp
+    const handleReady = () => {
+      const tg = getTelegramWebApp();
+      if (tg) {
+        resolve(tg);
+        window.removeEventListener("tgWebAppReady", handleReady);
+      }
+    };
+
+    window.addEventListener("tgWebAppReady", handleReady);
+    
+    // Таймаут на случай если событие не придёт
+    setTimeout(() => {
+      const tg = getTelegramWebApp();
+      if (tg) resolve(tg);
+      window.removeEventListener("tgWebAppReady", handleReady);
+    }, 2000);
+  });
+}

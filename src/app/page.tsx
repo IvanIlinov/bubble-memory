@@ -5,9 +5,9 @@ import { TaskBubblesPanel } from "@/widgets/task-bubbles-panel/ui/TaskBubblesPan
 import { WeekBubble } from "@/widgets/week-bubble/ui/WeekBubble";
 import { GrowthHistory } from "@/widgets/growth-history/ui/GrowthHistory";
 import {
-  getTelegramWebApp,
   getTelegramUser,
   getTelegramInitData,
+  waitForTelegramWebApp,
 } from "@/shared/lib/telegram";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
@@ -17,30 +17,20 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [debug, setDebug] = useState<string>("");
 
   useEffect(() => {
-    const tg = getTelegramWebApp();
-    console.log("🔧 TG WebApp:", tg ? "OK" : "NONE");
-    
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      setDebug(`TG: OK | `);
-    }
-
-    async function loadTasks() {
+    async function init() {
       try {
+        // Ждём инициализации WebApp (важно на мобильном)
+        const tg = await waitForTelegramWebApp();
+        tg.ready();
+        tg.expand();
+
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
-        console.log("📱 initData:", initData?.substring(0, 50));
-        console.log("👤 user:", telegramUser);
-        
-        setDebug(prev => prev + `initData: ${initData?.length || 0} | user: ${telegramUser?.first_name || "?"}`);
-
         if (!initData || !telegramUser) {
-          setDebug(prev => prev + " | NO DATA");
+          console.warn("No Telegram data");
           setLoading(false);
           return;
         }
@@ -51,17 +41,12 @@ export default function HomePage() {
           },
         });
 
-        console.log("📡 Response:", response.status);
-        setDebug(prev => prev + ` | API: ${response.status}`);
-
         if (!response.ok) {
           setLoading(false);
           return;
         }
 
         const data = await response.json();
-        console.log("✅ Data:", data);
-        
         setUser(data.user);
         setUserId(data.userId);
         
@@ -77,48 +62,35 @@ export default function HomePage() {
         
         setTasks(convertedTasks);
         setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
-        setDebug(prev => prev + ` | Tasks: ${convertedTasks.length}`);
       } catch (error) {
-        console.error("❌ Error:", error);
-        setDebug(prev => prev + ` | Error: ${error}`);
+        console.error("Init error:", error);
       } finally {
         setLoading(false);
       }
     }
 
-    loadTasks();
+    init();
   }, []);
 
   async function handleReview(taskTypeId: string) {
     if (!userId) return;
 
     try {
-      const response = await fetch("/api/review", {
+      await fetch("/api/review", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          taskTypeId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, taskTypeId }),
       });
-
-      if (response.ok) {
-        setSolvedCount((v) => v + 1);
-      }
+      setSolvedCount((v) => v + 1);
     } catch (error) {
-      console.error("Failed to save review:", error);
+      console.error("Review error:", error);
     }
   }
 
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-foam-muted mb-2">Загружаю...</p>
-          <p className="text-[10px] text-foam-muted">{debug}</p>
-        </div>
+        <p className="text-foam-muted">Загружаю...</p>
       </main>
     );
   }
@@ -134,11 +106,6 @@ export default function HomePage() {
           Деревянный
         </div>
       </header>
-
-      {/* ДЕБАГ ИНФОРМАЦИЯ */}
-      <div className="text-center text-[9px] text-foam-muted bg-deep-panel/50 p-1 rounded">
-        {debug}
-      </div>
 
       {user && (
         <div className="text-center text-sm text-foam">
