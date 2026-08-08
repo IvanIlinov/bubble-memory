@@ -9,7 +9,14 @@ import {
   getTelegramInitData,
 } from "@/shared/lib/telegram";
 import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
+import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
+
+// Определяем мобильное устройство
+const isMobile = () => {
+  if (typeof window === "undefined") return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+};
 
 export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(0);
@@ -17,37 +24,20 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     async function init() {
+      const mobile = isMobile();
+
       try {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
-        if (!initData || !telegramUser) {
-          const cached = getCachedTasks();
-          if (cached) {
-            setUser(cached.user);
-            setUserId(cached.userId);
-            setTasks(cached.tasks.map((t: any) => ({
-              taskTypeId: t.taskTypeId,
-              number: t.number,
-              title: t.title,
-              repetitions: t.repetitions,
-              color: "none" as const,
-              lastReviewLabel: "не начато",
-              reviewedToday: false,
-            })));
-            setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
-          }
-          setLoading(false);
-          return;
-        }
-
-        // Сначала показываем кеш (если есть)
+        // Пытаемся загрузить из кеша
         const cached = getCachedTasks();
+        
         if (cached) {
+          // Есть кеш — показываем его сразу
           setUser(cached.user);
           setUserId(cached.userId);
           setTasks(cached.tasks.map((t: any) => ({
@@ -61,10 +51,25 @@ export default function HomePage() {
           })));
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
           setLoading(false);
+
+          // На мобилке вообще не ждём синхронизацию
+          if (mobile) {
+            console.log("📱 Mobile: using cache, skipping sync");
+            return;
+          }
+        } else {
+          // Нет кеша — показываем моки
+          const mocks = getMockTaskBubbles();
+          setTasks(mocks);
+          setUser({ first_name: "Guest" });
+          setLoading(false);
         }
 
-        // Потом загружаем свежие данные в фоне
-        setSyncing(true);
+        // На десктопе загружаем в фоне (если нет кеша)
+        if (!initData || !telegramUser) {
+          return;
+        }
+
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 5000);
 
@@ -77,8 +82,6 @@ export default function HomePage() {
 
         if (response.ok) {
           const data = await response.json();
-          
-          // Кешируем результат
           setCachedTasks({
             userId: data.userId,
             user: data.user,
@@ -104,10 +107,6 @@ export default function HomePage() {
         }
       } catch (error) {
         console.error("Init error:", error);
-        // Если ошибка и нет кеша — не важно, пусть пользователь видит загрузку
-      } finally {
-        setLoading(false);
-        setSyncing(false);
       }
     }
 
@@ -160,7 +159,6 @@ export default function HomePage() {
       {user && (
         <div className="text-center text-sm text-foam">
           Привет, {user.first_name}!
-          {syncing && <p className="text-[10px] text-foam-muted">обновляю...</p>}
         </div>
       )}
 
