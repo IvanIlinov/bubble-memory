@@ -7,11 +7,12 @@ import { GrowthHistory } from "@/widgets/growth-history/ui/GrowthHistory";
 import {
   getTelegramUser,
   getTelegramInitData,
-  waitForTelegramWebApp,
 } from "@/shared/lib/telegram";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
+import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
-const FETCH_TIMEOUT = 5000;
+const FETCH_TIMEOUT = 3000; // 3 сек на загрузку
+const INIT_TIMEOUT = 3000; // 3 сек на WebApp инициализацию
 
 export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(0);
@@ -19,22 +20,26 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
-      try {
-        const tg = await waitForTelegramWebApp();
-        tg.ready();
-        tg.expand();
+      const startTime = Date.now();
 
+      try {
+        // Быстрая инициализация WebApp
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
         if (!initData || !telegramUser) {
+          console.warn("No Telegram data, using mocks");
+          setTasks(getMockTaskBubbles());
+          setUser({ first_name: "Guest" });
           setLoading(false);
           return;
         }
 
+        // Fetch с коротким timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
@@ -48,8 +53,7 @@ export default function HomePage() {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          setLoading(false);
-          return;
+          throw new Error(`API ${response.status}`);
         }
 
         const data = await response.json();
@@ -68,26 +72,36 @@ export default function HomePage() {
         
         setTasks(convertedTasks);
         setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
-      } catch (error) {
-        console.error("Init error:", error);
+      } catch (err) {
+        const elapsed = Date.now() - startTime;
+        console.error(`Init failed after ${elapsed}ms:`, err);
+        setError(`Ошибка загрузки (${err})`);
+        // Fallback на моки
+        setTasks(getMockTaskBubbles());
+        setUser({ first_name: "Guest" });
       } finally {
         setLoading(false);
       }
     }
 
-    init();
+    // Жёсткий таймаут на весь инит
+    const killSwitch = setTimeout(() => {
+      console.error("Init timeout - showing error");
+      setLoading(false);
+      setError("Таймаут загрузки");
+    }, 10000);
+
+    init().finally(() => clearTimeout(killSwitch));
   }, []);
 
   async function handleReview(taskTypeId: string) {
-    if (!userId) return;
-
-    // 🔑 ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ: сразу же увеличиваем счётчик
     setSolvedCount((v) => v + 1);
 
-    // Запрос идёт в фоне, результат не ждём
+    if (!userId) return;
+
     try {
       const controller = new AbortController();
-      setTimeout(() => controller.abort(), 3000);
+      setTimeout(() => controller.abort(), 2000);
 
       await fetch("/api/review", {
         method: "POST",
@@ -97,8 +111,6 @@ export default function HomePage() {
       });
     } catch (error) {
       console.error("Review error:", error);
-      // Если ошибка — откатываем (опционально)
-      // setSolvedCount((v) => v - 1);
     }
   }
 
@@ -108,6 +120,7 @@ export default function HomePage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
           <p className="text-foam-muted text-sm">Загружаю...</p>
+          {error && <p className="text-xs text-memory-red mt-2">{error}</p>}
         </div>
       </main>
     );
@@ -128,6 +141,12 @@ export default function HomePage() {
       {user && (
         <div className="text-center text-sm text-foam">
           Привет, {user.first_name}!
+        </div>
+      )}
+
+      {error && (
+        <div className="text-center text-xs text-memory-red bg-deep-panel/50 p-2 rounded">
+          ⚠️ {error}
         </div>
       )}
 
