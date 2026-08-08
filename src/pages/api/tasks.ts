@@ -1,25 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/shared/lib/prisma";
 
-export const dynamic = "force-dynamic";
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-export async function GET(request: NextRequest) {
   try {
-    const initData = request.headers.get("x-telegram-init-data");
+    const initData = req.headers["x-telegram-init-data"] as string;
     if (!initData) {
-      return NextResponse.json(
-        { error: "Missing initData" },
-        { status: 401 }
-      );
+      return res.status(401).json({ error: "Missing initData" });
     }
 
     const params = new URLSearchParams(initData);
     const userStr = params.get("user");
     if (!userStr) {
-      return NextResponse.json(
-        { error: "No user in initData" },
-        { status: 401 }
-      );
+      return res.status(401).json({ error: "No user in initData" });
     }
 
     const telegramUser = JSON.parse(userStr);
@@ -39,13 +38,12 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      // После create гарантированно user не null
       const tasks = await prisma.taskType.findMany();
       await Promise.all(
         tasks.map((task) =>
           prisma.taskMemory.create({
             data: {
-              userId: user!.id, // ! гарантирует что не null
+              userId: user!.id,
               taskTypeId: task.id,
             },
           })
@@ -58,7 +56,7 @@ export async function GET(request: NextRequest) {
       include: { taskType: true },
     });
 
-    return NextResponse.json({
+    res.status(200).json({
       userId: user.id,
       telegramId,
       user: telegramUser,
@@ -74,9 +72,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("GET /api/tasks error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    res.status(500).json({ error: "Internal server error" });
   }
 }
