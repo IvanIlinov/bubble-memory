@@ -30,7 +30,6 @@ export default function HomePage() {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
-        // Сначала проверяем кеш
         const cached = getCachedTasks();
         if (cached) {
           setUser(cached.user);
@@ -49,13 +48,11 @@ export default function HomePage() {
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
           setLoading(false);
 
-          // На мобилке не ждём синхронизацию
           if (isMobile()) {
             return;
           }
         }
 
-        // Если нет данных Telegram — используем моки
         if (!initData || !telegramUser) {
           const mocks = getMockTaskBubbles();
           setTasks(mocks);
@@ -64,7 +61,6 @@ export default function HomePage() {
           return;
         }
 
-        // Загружаем из API с timeout
         const controller = new AbortController();
         setTimeout(() => controller.abort(), 5000);
 
@@ -114,22 +110,39 @@ export default function HomePage() {
   }, []);
 
   async function handleReview(taskTypeId: string) {
+    console.log("🎯 Review clicked:", taskTypeId, "userId:", userId);
     setSolvedCount((v) => v + 1);
 
-    if (!userId) return;
+    if (!userId) {
+      console.warn("❌ No userId!");
+      return;
+    }
 
     try {
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), 2000);
+      const body = { userId, taskTypeId };
+      console.log("📤 Sending review:", body);
 
-      await fetch("/api/review", {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
+
+      const response = await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, taskTypeId }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
+
+      clearTimeout(timeout);
+      console.log("📥 Review response:", response.status);
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("❌ Review error:", error);
+      } else {
+        console.log("✅ Review saved");
+      }
     } catch (error) {
-      console.error("Review error:", error);
+      console.error("❌ Review failed:", error);
     }
   }
 
