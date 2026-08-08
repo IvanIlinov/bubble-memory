@@ -25,6 +25,51 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
 
+  async function loadTasksFromServer() {
+    try {
+      const initData = getTelegramInitData();
+      if (!initData) return;
+
+      const response = await fetch("/api/tasks", {
+        headers: {
+          "x-telegram-init-data": initData,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Кешируем свежие данные
+        setCachedTasks({
+          userId: data.userId,
+          user: data.user,
+          tasks: data.tasks,
+          timestamp: Date.now(),
+        });
+
+        setUser(data.user);
+        setUserId(data.userId);
+
+        const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
+          (t: any) => ({
+            taskTypeId: t.taskTypeId,
+            number: t.number,
+            title: t.title,
+            repetitions: t.repetitions,
+            color: "none" as const,
+            lastReviewLabel: "не начато",
+            reviewedToday: false,
+          })
+        );
+
+        setTasks(convertedTasks);
+        setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
+      }
+    } catch (error) {
+      console.error("Load error:", error);
+    }
+  }
+
   useEffect(() => {
     async function init() {
       try {
@@ -65,48 +110,9 @@ export default function HomePage() {
           return;
         }
 
-        setStatus("🔄 Fetching...");
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 5000);
-
-        const response = await fetch("/api/tasks", {
-          headers: {
-            "x-telegram-init-data": initData,
-          },
-          signal: controller.signal,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          setCachedTasks({
-            userId: data.userId,
-            user: data.user,
-            tasks: data.tasks,
-            timestamp: Date.now(),
-          });
-
-          setUser(data.user);
-          setUserId(data.userId);
-
-          const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
-            (t: any) => ({
-              taskTypeId: t.taskTypeId,
-              number: t.number,
-              title: t.title,
-              repetitions: t.repetitions,
-              color: "none" as const,
-              lastReviewLabel: "не начато",
-              reviewedToday: false,
-            })
-          );
-
-          setTasks(convertedTasks);
-          setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
-          setStatus(`✓ ${convertedTasks.length} tasks`);
-        } else {
-          setStatus(`✗ API ${response.status}`);
-        }
+        // Загружаем реальные данные
+        await loadTasksFromServer();
+        setStatus("✓ Loaded");
       } catch (error) {
         setStatus(`✗ ${error}`);
       } finally {
@@ -135,9 +141,8 @@ export default function HomePage() {
 
       if (response.ok) {
         setStatus(`✓ saved`);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("bubble-memory-tasks");
-        }
+        // После успешного клика — перезагружаем данные со сервера
+        setTimeout(() => loadTasksFromServer(), 500);
       } else {
         setStatus(`✗ ${response.status}`);
       }
