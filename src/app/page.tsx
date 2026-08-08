@@ -8,11 +8,8 @@ import {
   getTelegramUser,
   getTelegramInitData,
 } from "@/shared/lib/telegram";
+import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
-import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
-
-const FETCH_TIMEOUT = 3000; // 3 сек на загрузку
-const INIT_TIMEOUT = 3000; // 3 сек на WebApp инициализацию
 
 export default function HomePage() {
   const [solvedCount, setSolvedCount] = useState(0);
@@ -20,28 +17,56 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     async function init() {
-      const startTime = Date.now();
-
       try {
-        // Быстрая инициализация WebApp
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
         if (!initData || !telegramUser) {
-          console.warn("No Telegram data, using mocks");
-          setTasks(getMockTaskBubbles());
-          setUser({ first_name: "Guest" });
+          const cached = getCachedTasks();
+          if (cached) {
+            setUser(cached.user);
+            setUserId(cached.userId);
+            setTasks(cached.tasks.map((t: any) => ({
+              taskTypeId: t.taskTypeId,
+              number: t.number,
+              title: t.title,
+              repetitions: t.repetitions,
+              color: "none" as const,
+              lastReviewLabel: "не начато",
+              reviewedToday: false,
+            })));
+            setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
+          }
           setLoading(false);
           return;
         }
 
-        // Fetch с коротким timeout
+        // Сначала показываем кеш (если есть)
+        const cached = getCachedTasks();
+        if (cached) {
+          setUser(cached.user);
+          setUserId(cached.userId);
+          setTasks(cached.tasks.map((t: any) => ({
+            taskTypeId: t.taskTypeId,
+            number: t.number,
+            title: t.title,
+            repetitions: t.repetitions,
+            color: "none" as const,
+            lastReviewLabel: "не начато",
+            reviewedToday: false,
+          })));
+          setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
+          setLoading(false);
+        }
+
+        // Потом загружаем свежие данные в фоне
+        setSyncing(true);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+        setTimeout(() => controller.abort(), 5000);
 
         const response = await fetch("/api/tasks", {
           headers: {
@@ -50,48 +75,43 @@ export default function HomePage() {
           signal: controller.signal,
         });
 
-        clearTimeout(timeoutId);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Кешируем результат
+          setCachedTasks({
+            userId: data.userId,
+            user: data.user,
+            tasks: data.tasks,
+            timestamp: Date.now(),
+          });
 
-        if (!response.ok) {
-          throw new Error(`API ${response.status}`);
+          setUser(data.user);
+          setUserId(data.userId);
+          
+          const convertedTasks: MockTaskBubble[] = (data.tasks || []).map((t: any) => ({
+            taskTypeId: t.taskTypeId,
+            number: t.number,
+            title: t.title,
+            repetitions: t.repetitions,
+            color: "none" as const,
+            lastReviewLabel: "не начато",
+            reviewedToday: false,
+          }));
+          
+          setTasks(convertedTasks);
+          setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
         }
-
-        const data = await response.json();
-        setUser(data.user);
-        setUserId(data.userId);
-        
-        const convertedTasks: MockTaskBubble[] = (data.tasks || []).map((t: any) => ({
-          taskTypeId: t.taskTypeId,
-          number: t.number,
-          title: t.title,
-          repetitions: t.repetitions,
-          color: "none" as const,
-          lastReviewLabel: "не начато",
-          reviewedToday: false,
-        }));
-        
-        setTasks(convertedTasks);
-        setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
-      } catch (err) {
-        const elapsed = Date.now() - startTime;
-        console.error(`Init failed after ${elapsed}ms:`, err);
-        setError(`Ошибка загрузки (${err})`);
-        // Fallback на моки
-        setTasks(getMockTaskBubbles());
-        setUser({ first_name: "Guest" });
+      } catch (error) {
+        console.error("Init error:", error);
+        // Если ошибка и нет кеша — не важно, пусть пользователь видит загрузку
       } finally {
         setLoading(false);
+        setSyncing(false);
       }
     }
 
-    // Жёсткий таймаут на весь инит
-    const killSwitch = setTimeout(() => {
-      console.error("Init timeout - showing error");
-      setLoading(false);
-      setError("Таймаут загрузки");
-    }, 10000);
-
-    init().finally(() => clearTimeout(killSwitch));
+    init();
   }, []);
 
   async function handleReview(taskTypeId: string) {
@@ -114,13 +134,12 @@ export default function HomePage() {
     }
   }
 
-  if (loading) {
+  if (loading && tasks.length === 0) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
           <p className="text-foam-muted text-sm">Загружаю...</p>
-          {error && <p className="text-xs text-memory-red mt-2">{error}</p>}
         </div>
       </main>
     );
@@ -141,12 +160,7 @@ export default function HomePage() {
       {user && (
         <div className="text-center text-sm text-foam">
           Привет, {user.first_name}!
-        </div>
-      )}
-
-      {error && (
-        <div className="text-center text-xs text-memory-red bg-deep-panel/50 p-2 rounded">
-          ⚠️ {error}
+          {syncing && <p className="text-[10px] text-foam-muted">обновляю...</p>}
         </div>
       )}
 
