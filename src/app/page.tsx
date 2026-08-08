@@ -27,7 +27,7 @@ export default function HomePage() {
 
   const log = (msg: string) => {
     const timestamp = new Date().toLocaleTimeString();
-    setDebug((d) => [...d, `[${timestamp}] ${msg}`]);
+    setDebug((d) => [...d, `${msg}`]);
     console.log(`[${timestamp}] ${msg}`);
   };
 
@@ -40,16 +40,13 @@ export default function HomePage() {
         const mobile = isMobile();
         log(`📱 Device: ${mobile ? "MOBILE" : "DESKTOP"}`);
 
-        const t1 = performance.now();
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
-        log(`✓ Telegram check (${(performance.now() - t1).toFixed(0)}ms)`);
-        log(`  initData: ${initData?.length || 0} chars`);
-        log(`  user: ${telegramUser?.first_name || "NONE"}`);
+        log(`✓ Telegram: initData=${initData?.length || 0} chars, user=${telegramUser?.first_name || "NONE"}`);
 
         const cached = getCachedTasks();
         if (cached) {
-          log(`✓ Cache found (${cached.tasks.length} tasks)`);
+          log(`✓ Cache: ${cached.tasks.length} tasks`);
           setUser(cached.user);
           setUserId(cached.userId);
           setTasks(
@@ -64,31 +61,31 @@ export default function HomePage() {
             }))
           );
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
+          setLoading(false);
 
           if (mobile) {
-            log(`✓ Mobile mode: skipping API sync`);
-            setLoading(false);
+            log(`✓ Mobile: using cache, not syncing`);
             return;
           }
         } else {
-          log(`❌ Cache not found`);
+          log(`❌ Cache: not found`);
         }
 
         if (!initData || !telegramUser) {
-          log(`⚠️ No Telegram data - using mocks`);
+          log(`⚠️ No Telegram data - loading mocks`);
           const mocks = getMockTaskBubbles();
           setTasks(mocks);
-          setUser({ first_name: "Guest" });
+          setUser({ first_name: "Guest (no TG)" });
           setLoading(false);
           return;
         }
 
-        log("🔄 Fetching from API...");
+        log("🔄 Syncing from API...");
         const t2 = performance.now();
 
         const controller = new AbortController();
         const timeout = setTimeout(() => {
-          log("⏱️ TIMEOUT after 5s");
+          log("⏱️ Timeout!");
           controller.abort();
         }, 5000);
 
@@ -101,13 +98,10 @@ export default function HomePage() {
           });
 
           clearTimeout(timeout);
-          const fetchTime = (performance.now() - t2).toFixed(0);
-          log(`📥 Status ${response.status} (${fetchTime}ms)`);
+          log(`📥 API: ${response.status} (${(performance.now() - t2).toFixed(0)}ms)`);
 
           if (response.ok) {
-            const t3 = performance.now();
             const data = await response.json();
-            log(`✓ JSON ok (${(performance.now() - t3).toFixed(0)}ms)`);
 
             setCachedTasks({
               userId: data.userId,
@@ -133,25 +127,16 @@ export default function HomePage() {
 
             setTasks(convertedTasks);
             setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
-            log(`✓ ${convertedTasks.length} tasks loaded`);
-          } else {
-            log(`❌ API error ${response.status}`);
-            throw new Error(`API ${response.status}`);
+            log(`✓ ${convertedTasks.length} tasks synced`);
           }
         } catch (fetchErr) {
           clearTimeout(timeout);
-          log(`❌ Fetch failed: ${fetchErr}`);
-          throw fetchErr;
+          log(`❌ API failed: ${fetchErr}`);
         }
       } catch (error) {
         log(`❌ Fatal: ${error}`);
-        // Fallback
-        const mocks = getMockTaskBubbles();
-        setTasks(mocks);
-        setUser({ first_name: "Guest" });
       } finally {
-        const total = (performance.now() - startTime).toFixed(0);
-        log(`⏱️ Total: ${total}ms`);
+        log(`⏱️ Total: ${(performance.now() - startTime).toFixed(0)}ms`);
         setLoading(false);
       }
     }
@@ -179,24 +164,12 @@ export default function HomePage() {
     }
   }
 
-  // Показываем логи ДО моков
-  if (loading || debug.length > 0) {
+  if (loading && tasks.length === 0) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
-          <p className="text-foam-muted text-sm mb-3">Загружаю...</p>
-          <div className="text-[8px] text-foam-muted/70 max-h-40 overflow-y-auto bg-deep-panel/50 p-2 rounded font-mono">
-            {debug.length === 0 ? (
-              <div>инициализация...</div>
-            ) : (
-              debug.map((d, i) => (
-                <div key={i} className="text-left">
-                  {d}
-                </div>
-              ))
-            )}
-          </div>
+          <p className="text-foam-muted text-sm">Загружаю...</p>
         </div>
       </main>
     );
@@ -213,6 +186,13 @@ export default function HomePage() {
           Деревянный
         </div>
       </header>
+
+      {/* ЛОГИ ВНИЗУ */}
+      <div className="text-[7px] text-foam-muted/50 bg-deep-panel/30 p-1 rounded font-mono max-h-12 overflow-y-auto">
+        {debug.map((d, i) => (
+          <div key={i}>{d}</div>
+        ))}
+      </div>
 
       {user && (
         <div className="text-center text-sm text-foam">
