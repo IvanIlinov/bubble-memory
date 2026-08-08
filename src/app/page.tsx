@@ -23,64 +23,16 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [debug, setDebug] = useState<string[]>([]);
-
-  const log = (msg: string) => {
-    setDebug((d) => [...d, msg]);
-    console.log(msg);
-  };
 
   useEffect(() => {
-    const originalLog = console.log;
-    console.log = function(...args: any[]) {
-      originalLog(...args);
-      const msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ');
-      setDebug((d) => [...d, msg]);
-    };
-
-    const startTime = performance.now();
-    log("🚀 Init start");
-
-    const checkTelegram = () => {
-      const mobile = isMobile();
-      log(`📱 Device: ${mobile ? "MOBILE" : "DESKTOP"}`);
-
-      let attempts = 0;
-      const tryGetData = () => {
+    async function init() {
+      try {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
-        
-        log(`📍 Attempt ${attempts + 1}: data=${initData.length}, user=${telegramUser?.first_name || "?"}`);
 
-        if (!initData && attempts < 5) {
-          attempts++;
-          setTimeout(tryGetData, 500);
-          return;
-        }
-
-        loadTasks(initData, telegramUser);
-      };
-
-      tryGetData();
-    };
-
-    window.addEventListener("tgWebAppReady", () => {
-      log("✓ tgWebAppReady fired");
-      checkTelegram();
-    });
-
-    const fallbackTimer = setTimeout(() => {
-      log("⏳ Fallback: checking Telegram");
-      checkTelegram();
-    }, 2000);
-
-    async function loadTasks(initData: string, telegramUser: any) {
-      clearTimeout(fallbackTimer);
-
-      try {
+        // Сначала проверяем кеш
         const cached = getCachedTasks();
         if (cached) {
-          log(`✓ Cache: ${cached.tasks.length} tasks`);
           setUser(cached.user);
           setUserId(cached.userId);
           setTasks(
@@ -97,14 +49,14 @@ export default function HomePage() {
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
           setLoading(false);
 
+          // На мобилке не ждём синхронизацию
           if (isMobile()) {
-            log(`✓ Mobile: using cache`);
             return;
           }
         }
 
+        // Если нет данных Telegram — используем моки
         if (!initData || !telegramUser) {
-          log(`⚠️ No TG data - using mocks`);
           const mocks = getMockTaskBubbles();
           setTasks(mocks);
           setUser({ first_name: "Guest" });
@@ -112,17 +64,20 @@ export default function HomePage() {
           return;
         }
 
-        log("🔄 Fetching API...");
+        // Загружаем из API с timeout
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 5000);
+
         const response = await fetch("/api/tasks", {
           headers: {
             "x-telegram-init-data": initData,
           },
+          signal: controller.signal,
         });
-
-        log(`📥 API: ${response.status}`);
 
         if (response.ok) {
           const data = await response.json();
+          
           setCachedTasks({
             userId: data.userId,
             user: data.user,
@@ -147,30 +102,31 @@ export default function HomePage() {
 
           setTasks(convertedTasks);
           setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
-          log(`✓ ${convertedTasks.length} tasks`);
         }
       } catch (error) {
-        log(`❌ ${error}`);
+        console.error("Init error:", error);
       } finally {
-        log(`⏱️ Total: ${(performance.now() - startTime).toFixed(0)}ms`);
         setLoading(false);
       }
     }
 
-    return () => {
-      clearTimeout(fallbackTimer);
-      console.log = originalLog;
-    };
+    init();
   }, []);
 
   async function handleReview(taskTypeId: string) {
     setSolvedCount((v) => v + 1);
+
     if (!userId) return;
+
     try {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 2000);
+
       await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, taskTypeId }),
+        signal: controller.signal,
       });
     } catch (error) {
       console.error("Review error:", error);
@@ -182,12 +138,7 @@ export default function HomePage() {
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
-          <p className="text-foam-muted text-sm mb-3">Загружаю...</p>
-          <div className="text-[6px] text-foam-muted/50 bg-deep-panel/50 p-2 rounded font-mono max-h-32 overflow-y-auto text-left">
-            {debug.map((d, i) => (
-              <div key={i} className="break-all">{d}</div>
-            ))}
-          </div>
+          <p className="text-foam-muted">Загружаю...</p>
         </div>
       </main>
     );
