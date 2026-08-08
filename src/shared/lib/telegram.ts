@@ -28,44 +28,39 @@ declare global {
 
 export function getTelegramWebApp(): TelegramWebApp | null {
   if (typeof window === "undefined") return null;
-  return window.Telegram?.WebApp ?? null;
+  const tg = window.Telegram?.WebApp;
+  console.log("🔍 getTelegramWebApp:", {
+    exists: !!tg,
+    hasInitData: !!tg?.initData,
+    initDataLength: tg?.initData?.length || 0,
+    hasUser: !!tg?.initDataUnsafe?.user,
+  });
+  return tg ?? null;
 }
 
 export function getTelegramUser(): TelegramUser | null {
   const webApp = getTelegramWebApp();
-  return webApp?.initDataUnsafe?.user ?? null;
+  const user = webApp?.initDataUnsafe?.user ?? null;
+  console.log("🔍 getTelegramUser:", user);
+  return user;
 }
 
 export function getTelegramInitData(): string {
   const webApp = getTelegramWebApp();
-  return webApp?.initData ?? "";
+  const data = webApp?.initData ?? "";
+  console.log("🔍 getTelegramInitData length:", data.length);
+  return data;
 }
 
-// Ждём инициализации WebApp
-export function waitForTelegramWebApp(): Promise<TelegramWebApp> {
-  return new Promise((resolve) => {
-    const tg = getTelegramWebApp();
-    if (tg && tg.initData) {
-      resolve(tg);
-      return;
-    }
-
-    // Ждём события ready от WebApp
-    const handleReady = () => {
-      const tg = getTelegramWebApp();
-      if (tg) {
-        resolve(tg);
-        window.removeEventListener("tgWebAppReady", handleReady);
-      }
-    };
-
-    window.addEventListener("tgWebAppReady", handleReady);
-    
-    // Таймаут на случай если событие не придёт
-    setTimeout(() => {
-      const tg = getTelegramWebApp();
-      if (tg) resolve(tg);
-      window.removeEventListener("tgWebAppReady", handleReady);
-    }, 2000);
-  });
+export function debugTelegram() {
+  console.log("🔍 === DEBUG TELEGRAM ===");
+  console.log("window.Telegram:", typeof window !== "undefined" ? window.Telegram : "N/A");
+  console.log("window.Telegram?.WebApp:", typeof window !== "undefined" ? window.Telegram?.WebApp : "N/A");
+  
+  const tg = getTelegramWebApp();
+  if (tg) {
+    console.log("initData:", tg.initData?.substring(0, 50) + "...");
+    console.log("initDataUnsafe:", tg.initDataUnsafe);
+  }
+  console.log("🔍 === END DEBUG ===");
 }

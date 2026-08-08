@@ -7,6 +7,7 @@ import { GrowthHistory } from "@/widgets/growth-history/ui/GrowthHistory";
 import {
   getTelegramUser,
   getTelegramInitData,
+  debugTelegram,
 } from "@/shared/lib/telegram";
 import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
 import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
@@ -26,24 +27,58 @@ export default function HomePage() {
   const [debug, setDebug] = useState<string[]>([]);
 
   const log = (msg: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setDebug((d) => [...d, `${msg}`]);
-    console.log(`[${timestamp}] ${msg}`);
+    setDebug((d) => [...d, msg]);
+    console.log(msg);
   };
 
   useEffect(() => {
     const startTime = performance.now();
     log("🚀 Init start");
 
-    async function init() {
-      try {
-        const mobile = isMobile();
-        log(`📱 Device: ${mobile ? "MOBILE" : "DESKTOP"}`);
+    // КРИТИЧНО: даём время на загрузку Telegram SDK
+    const checkTelegram = () => {
+      debugTelegram();
+      const mobile = isMobile();
+      log(`📱 Device: ${mobile ? "MOBILE" : "DESKTOP"}`);
 
+      // Попробуем достать данные
+      let attempts = 0;
+      const tryGetData = () => {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
-        log(`✓ Telegram: initData=${initData?.length || 0} chars, user=${telegramUser?.first_name || "NONE"}`);
+        
+        log(`📍 Attempt ${attempts + 1}: data=${initData.length}, user=${telegramUser?.first_name || "?"}`);
 
+        if (!initData && attempts < 5) {
+          attempts++;
+          log(`⏳ Retrying in 500ms...`);
+          setTimeout(tryGetData, 500);
+          return;
+        }
+
+        // Загружаем дальше
+        loadTasks(initData, telegramUser);
+      };
+
+      tryGetData();
+    };
+
+    // Слушаем событие ready от Telegram SDK
+    window.addEventListener("tgWebAppReady", () => {
+      log("✓ tgWebAppReady fired");
+      checkTelegram();
+    });
+
+    // Если событие не придёт за 3 сек, проверяем всё равно
+    const fallbackTimer = setTimeout(() => {
+      log("⏳ Fallback: checking Telegram without ready event");
+      checkTelegram();
+    }, 3000);
+
+    async function loadTasks(initData: string, telegramUser: any) {
+      clearTimeout(fallbackTimer);
+
+      try {
         const cached = getCachedTasks();
         if (cached) {
           log(`✓ Cache: ${cached.tasks.length} tasks`);
@@ -63,85 +98,80 @@ export default function HomePage() {
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
           setLoading(false);
 
-          if (mobile) {
-            log(`✓ Mobile: using cache, not syncing`);
+          if (isMobile()) {
+            log(`✓ Mobile: using cache`);
             return;
           }
-        } else {
-          log(`❌ Cache: not found`);
         }
 
         if (!initData || !telegramUser) {
-          log(`⚠️ No Telegram data - loading mocks`);
+          log(`⚠️ No TG data - using mocks`);
           const mocks = getMockTaskBubbles();
           setTasks(mocks);
-          setUser({ first_name: "Guest (no TG)" });
+          setUser({ first_name: "Guest" });
           setLoading(false);
           return;
         }
 
-        log("🔄 Syncing from API...");
+        log("🔄 Fetching API...");
         const t2 = performance.now();
 
         const controller = new AbortController();
         const timeout = setTimeout(() => {
-          log("⏱️ Timeout!");
+          log("⏱️ API timeout");
           controller.abort();
         }, 5000);
 
-        try {
-          const response = await fetch("/api/tasks", {
-            headers: {
-              "x-telegram-init-data": initData,
-            },
-            signal: controller.signal,
+        const response = await fetch("/api/tasks", {
+          headers: {
+            "x-telegram-init-data": initData,
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+        log(`📥 API: ${response.status} (${(performance.now() - t2).toFixed(0)}ms)`);
+
+        if (response.ok) {
+          const data = await response.json();
+
+          setCachedTasks({
+            userId: data.userId,
+            user: data.user,
+            tasks: data.tasks,
+            timestamp: Date.now(),
           });
 
-          clearTimeout(timeout);
-          log(`📥 API: ${response.status} (${(performance.now() - t2).toFixed(0)}ms)`);
+          setUser(data.user);
+          setUserId(data.userId);
 
-          if (response.ok) {
-            const data = await response.json();
+          const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
+            (t: any) => ({
+              taskTypeId: t.taskTypeId,
+              number: t.number,
+              title: t.title,
+              repetitions: t.repetitions,
+              color: "none" as const,
+              lastReviewLabel: "не начато",
+              reviewedToday: false,
+            })
+          );
 
-            setCachedTasks({
-              userId: data.userId,
-              user: data.user,
-              tasks: data.tasks,
-              timestamp: Date.now(),
-            });
-
-            setUser(data.user);
-            setUserId(data.userId);
-
-            const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
-              (t: any) => ({
-                taskTypeId: t.taskTypeId,
-                number: t.number,
-                title: t.title,
-                repetitions: t.repetitions,
-                color: "none" as const,
-                lastReviewLabel: "не начато",
-                reviewedToday: false,
-              })
-            );
-
-            setTasks(convertedTasks);
-            setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
-            log(`✓ ${convertedTasks.length} tasks synced`);
-          }
-        } catch (fetchErr) {
-          clearTimeout(timeout);
-          log(`❌ API failed: ${fetchErr}`);
+          setTasks(convertedTasks);
+          setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
+          log(`✓ ${convertedTasks.length} tasks`);
         }
       } catch (error) {
-        log(`❌ Fatal: ${error}`);
+        log(`❌ ${error}`);
       } finally {
         log(`⏱️ Total: ${(performance.now() - startTime).toFixed(0)}ms`);
         setLoading(false);
       }
     }
 
-    init();
+    return () => {
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   async function handleReview(taskTypeId: string) {
@@ -169,7 +199,12 @@ export default function HomePage() {
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
-          <p className="text-foam-muted text-sm">Загружаю...</p>
+          <p className="text-foam-muted text-sm mb-3">Загружаю...</p>
+          <div className="text-[7px] text-foam-muted/60 bg-deep-panel/30 p-1 rounded font-mono max-h-20 overflow-y-auto">
+            {debug.map((d, i) => (
+              <div key={i}>{d}</div>
+            ))}
+          </div>
         </div>
       </main>
     );
@@ -186,13 +221,6 @@ export default function HomePage() {
           Деревянный
         </div>
       </header>
-
-      {/* ЛОГИ ВНИЗУ */}
-      <div className="text-[7px] text-foam-muted/50 bg-deep-panel/30 p-1 rounded font-mono max-h-12 overflow-y-auto">
-        {debug.map((d, i) => (
-          <div key={i}>{d}</div>
-        ))}
-      </div>
 
       {user && (
         <div className="text-center text-sm text-foam">
