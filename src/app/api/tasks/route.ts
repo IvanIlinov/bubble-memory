@@ -25,13 +25,11 @@ export async function GET(request: NextRequest) {
     const telegramUser = JSON.parse(userStr);
     const telegramId = String(telegramUser.id);
 
-    // Ищем/создаём пользователя по telegramId
     let user = await prisma.user.findUnique({
       where: { telegramId },
     });
 
     if (!user) {
-      // Создаём нового пользователя
       user = await prisma.user.create({
         data: {
           telegramId,
@@ -41,13 +39,13 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      // Создаём его памяти для всех 27 задач
+      // После create гарантированно user не null
       const tasks = await prisma.taskType.findMany();
       await Promise.all(
         tasks.map((task) =>
           prisma.taskMemory.create({
             data: {
-              userId: user.id,
+              userId: user!.id, // ! гарантирует что не null
               taskTypeId: task.id,
             },
           })
@@ -55,7 +53,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Получаем все задачи пользователя
     const memories = await prisma.taskMemory.findMany({
       where: { userId: user.id },
       include: { taskType: true },
