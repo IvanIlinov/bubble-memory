@@ -10,10 +10,7 @@ export default async function handler(
   }
 
   try {
-    console.log("🔍 /api/tasks called");
-    
     const initData = req.headers["x-telegram-init-data"] as string;
-    console.log("📥 initData length:", initData?.length);
     
     if (!initData) {
       return res.status(401).json({ error: "Missing initData" });
@@ -21,7 +18,6 @@ export default async function handler(
 
     const params = new URLSearchParams(initData);
     const userStr = params.get("user");
-    console.log("👤 userStr:", userStr ? "OK" : "MISSING");
     
     if (!userStr) {
       return res.status(401).json({ error: "No user in initData" });
@@ -29,16 +25,12 @@ export default async function handler(
 
     const telegramUser = JSON.parse(userStr);
     const telegramId = String(telegramUser.id);
-    console.log("🔑 telegramId:", telegramId);
 
-    console.log("🔍 Finding user in DB...");
     let user = await prisma.user.findUnique({
       where: { telegramId },
     });
-    console.log("✅ User found:", user?.id);
 
     if (!user) {
-      console.log("➕ Creating new user...");
       user = await prisma.user.create({
         data: {
           telegramId,
@@ -47,12 +39,8 @@ export default async function handler(
           nickname: telegramUser.username || `user_${telegramId}`,
         },
       });
-      console.log("✅ User created:", user.id);
 
-      console.log("📋 Creating task memories...");
       const tasks = await prisma.taskType.findMany();
-      console.log("📊 Found task types:", tasks.length);
-      
       await Promise.all(
         tasks.map((task) =>
           prisma.taskMemory.create({
@@ -63,15 +51,14 @@ export default async function handler(
           })
         )
       );
-      console.log("✅ Memories created");
     }
 
-    console.log("🔍 Fetching memories...");
+    // КЛЮЧ: сортируем по номеру задачи
     const memories = await prisma.taskMemory.findMany({
       where: { userId: user.id },
       include: { taskType: true },
+      orderBy: { taskType: { number: "asc" } },
     });
-    console.log("✅ Memories loaded:", memories.length);
 
     res.status(200).json({
       userId: user.id,
