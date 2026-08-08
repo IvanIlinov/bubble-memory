@@ -23,7 +23,6 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [lastReviewLog, setLastReviewLog] = useState<string>("");
 
   useEffect(() => {
     async function init() {
@@ -111,15 +110,10 @@ export default function HomePage() {
   }, []);
 
   async function handleReview(taskTypeId: string) {
-    const msg = `Клик: ${taskTypeId}, userID: ${userId}`;
-    setLastReviewLog(msg);
-    console.log("🎯", msg);
+    // Оптимистичное обновление UI
     setSolvedCount((v) => v + 1);
 
-    if (!userId) {
-      setLastReviewLog("❌ Нет userId!");
-      return;
-    }
+    if (!userId) return;
 
     try {
       const response = await fetch("/api/review", {
@@ -128,11 +122,14 @@ export default function HomePage() {
         body: JSON.stringify({ userId, taskTypeId }),
       });
 
-      const log = response.ok ? "✅ OK" : `❌ ${response.status}`;
-      setLastReviewLog(log);
-      console.log(log);
+      if (response.ok) {
+        // При успешном клике — очищаем кеш
+        // Следующая загрузка будет из БД со свежими данными
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("bubble-memory-tasks");
+        }
+      }
     } catch (error) {
-      setLastReviewLog(`❌ ${error}`);
       console.error("Review failed:", error);
     }
   }
@@ -163,12 +160,6 @@ export default function HomePage() {
       {user && (
         <div className="text-center text-sm text-foam">
           Привет, {user.first_name}!
-        </div>
-      )}
-
-      {lastReviewLog && (
-        <div className="text-center text-[10px] text-foam-muted bg-deep-panel/50 p-1 rounded">
-          {lastReviewLog}
         </div>
       )}
 
