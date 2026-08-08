@@ -8,7 +8,7 @@ const display = Bricolage_Grotesque({
 });
 
 const body = Manrope({
-  subsets: ["latin", "cyrillic"],
+  subsets: ["latin", "cyrillic-ext"],
   variable: "--font-body",
 });
 
@@ -32,8 +32,28 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${display.variable} ${body.variable}`}>
       <head>
-        {/* Telegram WebApp SDK — обязателен для initData и Haptic Feedback */}
-        <script src="https://telegram.org/js/telegram-web-app.js" async />
+        {/* Telegram WebApp SDK — INLINE for reliability */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const script = document.createElement('script');
+                script.src = 'https://telegram.org/js/telegram-web-app.js';
+                script.onload = function() {
+                  console.log('✓ Telegram SDK loaded');
+                  if (window.Telegram?.WebApp) {
+                    console.log('✓ window.Telegram.WebApp ready');
+                    window.Telegram.WebApp.ready();
+                  }
+                };
+                script.onerror = function() {
+                  console.error('✗ Failed to load Telegram SDK');
+                };
+                document.head.appendChild(script);
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-deep font-body text-foam antialiased">
         {children}
