@@ -12,7 +12,6 @@ import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
 import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
-// Определяем мобильное устройство
 const isMobile = () => {
   if (typeof window === "undefined") return false;
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -24,54 +23,72 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [debug, setDebug] = useState<string[]>([]);
+
+  const log = (msg: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setDebug((d) => [...d, `[${timestamp}] ${msg}`]);
+    console.log(`[${timestamp}] ${msg}`);
+  };
 
   useEffect(() => {
+    const startTime = performance.now();
+    log("🚀 Init start");
+
     async function init() {
       const mobile = isMobile();
+      log(`📱 Device: ${mobile ? "MOBILE" : "DESKTOP"}`);
 
       try {
+        const t1 = performance.now();
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
+        log(`✓ Telegram data ready (${(performance.now() - t1).toFixed(0)}ms)`);
 
-        // Пытаемся загрузить из кеша
         const cached = getCachedTasks();
-        
         if (cached) {
-          // Есть кеш — показываем его сразу
+          log(`✓ Cache found`);
           setUser(cached.user);
           setUserId(cached.userId);
-          setTasks(cached.tasks.map((t: any) => ({
-            taskTypeId: t.taskTypeId,
-            number: t.number,
-            title: t.title,
-            repetitions: t.repetitions,
-            color: "none" as const,
-            lastReviewLabel: "не начато",
-            reviewedToday: false,
-          })));
+          setTasks(
+            cached.tasks.map((t: any) => ({
+              taskTypeId: t.taskTypeId,
+              number: t.number,
+              title: t.title,
+              repetitions: t.repetitions,
+              color: "none" as const,
+              lastReviewLabel: "не начато",
+              reviewedToday: false,
+            }))
+          );
           setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
           setLoading(false);
 
-          // На мобилке вообще не ждём синхронизацию
           if (mobile) {
-            console.log("📱 Mobile: using cache, skipping sync");
+            log(`📱 Skipping sync on mobile`);
             return;
           }
         } else {
-          // Нет кеша — показываем моки
+          log(`⚠️ No cache`);
           const mocks = getMockTaskBubbles();
           setTasks(mocks);
           setUser({ first_name: "Guest" });
           setLoading(false);
         }
 
-        // На десктопе загружаем в фоне (если нет кеша)
         if (!initData || !telegramUser) {
+          log("❌ No Telegram data");
           return;
         }
 
+        log("🔄 Starting API fetch...");
+        const t2 = performance.now();
+
         const controller = new AbortController();
-        setTimeout(() => controller.abort(), 5000);
+        const timeout = setTimeout(() => {
+          log("⏱️ Fetch timeout (5s)");
+          controller.abort();
+        }, 5000);
 
         const response = await fetch("/api/tasks", {
           headers: {
@@ -80,8 +97,15 @@ export default function HomePage() {
           signal: controller.signal,
         });
 
+        clearTimeout(timeout);
+        const fetchTime = (performance.now() - t2).toFixed(0);
+        log(`📥 Response: ${response.status} (${fetchTime}ms)`);
+
         if (response.ok) {
+          const t3 = performance.now();
           const data = await response.json();
+          log(`✓ JSON parsed (${(performance.now() - t3).toFixed(0)}ms)`);
+
           setCachedTasks({
             userId: data.userId,
             user: data.user,
@@ -91,23 +115,29 @@ export default function HomePage() {
 
           setUser(data.user);
           setUserId(data.userId);
-          
-          const convertedTasks: MockTaskBubble[] = (data.tasks || []).map((t: any) => ({
-            taskTypeId: t.taskTypeId,
-            number: t.number,
-            title: t.title,
-            repetitions: t.repetitions,
-            color: "none" as const,
-            lastReviewLabel: "не начато",
-            reviewedToday: false,
-          }));
-          
+
+          const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
+            (t: any) => ({
+              taskTypeId: t.taskTypeId,
+              number: t.number,
+              title: t.title,
+              repetitions: t.repetitions,
+              color: "none" as const,
+              lastReviewLabel: "не начато",
+              reviewedToday: false,
+            })
+          );
+
           setTasks(convertedTasks);
-          setSolvedCount(convertedTasks.filter(t => t.repetitions > 0).length);
+          setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
+          log(`✓ Data loaded: ${convertedTasks.length} tasks`);
         }
       } catch (error) {
-        console.error("Init error:", error);
+        log(`❌ Error: ${error}`);
       }
+
+      const totalTime = (performance.now() - startTime).toFixed(0);
+      log(`⏱️ Total time: ${totalTime}ms`);
     }
 
     init();
@@ -138,7 +168,12 @@ export default function HomePage() {
       <main className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
-          <p className="text-foam-muted text-sm">Загружаю...</p>
+          <p className="text-foam-muted text-sm mb-3">Загружаю...</p>
+          <div className="text-[9px] text-foam-muted/70 max-h-32 overflow-y-auto bg-deep-panel/30 p-2 rounded">
+            {debug.map((d, i) => (
+              <div key={i}>{d}</div>
+            ))}
+          </div>
         </div>
       </main>
     );
