@@ -32,16 +32,22 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    // Перенаправляем console.log в наш UI
+    const originalLog = console.log;
+    console.log = function(...args: any[]) {
+      originalLog(...args);
+      const msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ');
+      setDebug((d) => [...d, msg]);
+    };
+
     const startTime = performance.now();
     log("🚀 Init start");
+    debugTelegram();
 
-    // КРИТИЧНО: даём время на загрузку Telegram SDK
     const checkTelegram = () => {
-      debugTelegram();
       const mobile = isMobile();
       log(`📱 Device: ${mobile ? "MOBILE" : "DESKTOP"}`);
 
-      // Попробуем достать данные
       let attempts = 0;
       const tryGetData = () => {
         const initData = getTelegramInitData();
@@ -51,29 +57,25 @@ export default function HomePage() {
 
         if (!initData && attempts < 5) {
           attempts++;
-          log(`⏳ Retrying in 500ms...`);
           setTimeout(tryGetData, 500);
           return;
         }
 
-        // Загружаем дальше
         loadTasks(initData, telegramUser);
       };
 
       tryGetData();
     };
 
-    // Слушаем событие ready от Telegram SDK
     window.addEventListener("tgWebAppReady", () => {
       log("✓ tgWebAppReady fired");
       checkTelegram();
     });
 
-    // Если событие не придёт за 3 сек, проверяем всё равно
     const fallbackTimer = setTimeout(() => {
-      log("⏳ Fallback: checking Telegram without ready event");
+      log("⏳ Fallback: checking Telegram");
       checkTelegram();
-    }, 3000);
+    }, 2000);
 
     async function loadTasks(initData: string, telegramUser: any) {
       clearTimeout(fallbackTimer);
@@ -114,27 +116,16 @@ export default function HomePage() {
         }
 
         log("🔄 Fetching API...");
-        const t2 = performance.now();
-
-        const controller = new AbortController();
-        const timeout = setTimeout(() => {
-          log("⏱️ API timeout");
-          controller.abort();
-        }, 5000);
-
         const response = await fetch("/api/tasks", {
           headers: {
             "x-telegram-init-data": initData,
           },
-          signal: controller.signal,
         });
 
-        clearTimeout(timeout);
-        log(`📥 API: ${response.status} (${(performance.now() - t2).toFixed(0)}ms)`);
+        log(`📥 API: ${response.status}`);
 
         if (response.ok) {
           const data = await response.json();
-
           setCachedTasks({
             userId: data.userId,
             user: data.user,
@@ -171,23 +162,18 @@ export default function HomePage() {
 
     return () => {
       clearTimeout(fallbackTimer);
+      console.log = originalLog;
     };
   }, []);
 
   async function handleReview(taskTypeId: string) {
     setSolvedCount((v) => v + 1);
-
     if (!userId) return;
-
     try {
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), 2000);
-
       await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, taskTypeId }),
-        signal: controller.signal,
       });
     } catch (error) {
       console.error("Review error:", error);
@@ -200,9 +186,9 @@ export default function HomePage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-living border-t-transparent mx-auto mb-3" />
           <p className="text-foam-muted text-sm mb-3">Загружаю...</p>
-          <div className="text-[7px] text-foam-muted/60 bg-deep-panel/30 p-1 rounded font-mono max-h-20 overflow-y-auto">
+          <div className="text-[6px] text-foam-muted/50 bg-deep-panel/50 p-2 rounded font-mono max-h-32 overflow-y-auto text-left">
             {debug.map((d, i) => (
-              <div key={i}>{d}</div>
+              <div key={i} className="break-all">{d}</div>
             ))}
           </div>
         </div>
