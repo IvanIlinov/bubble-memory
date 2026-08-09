@@ -8,7 +8,7 @@ export function TaskBubblesPanel({
   onReview,
   tasks,
 }: {
-  onReview?: (taskTypeId: string) => void;
+  onReview?: (taskTypeId: string) => void | Promise<void>;
   tasks?: MockTaskBubble[];
 }) {
   const tasksToShow = tasks ?? getMockTaskBubbles();
@@ -22,7 +22,7 @@ export function TaskBubblesPanel({
           color={task.color}
           statusText={`Задание ${task.number}: ${task.title}. ${task.lastReviewLabel}.`}
           alreadyReviewedToday={task.reviewedToday}
-          onReview={() => onReview?.(task.taskTypeId)}
+          onReview={() => onReview?.(task.taskTypeId) ?? Promise.resolve()}
         />
       ))}
     </section>
