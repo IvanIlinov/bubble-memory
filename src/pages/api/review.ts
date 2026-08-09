@@ -27,6 +27,17 @@ export default async function handler(
       return res.status(404).json({ error: "Task not found" });
     }
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const alreadyToday = await prisma.reviewLog.findFirst({
+      where: { userId, taskTypeId, reviewedAt: { gte: todayStart } },
+    });
+
+    if (alreadyToday) {
+      return res.status(200).json({ success: true, skipped: true });
+    }
+
     const nextReview = fixedLadderReviewAlgorithm.computeNext({
       repetitions: memory.repetitions,
       intervalDays: memory.intervalDays,

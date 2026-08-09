@@ -122,25 +122,21 @@ export default function HomePage() {
     init();
   }, []);
 
-  async function handleReview(taskTypeId: string) {
-    setTotalReps((value) => value + 1);
-
+  async function handleReview(taskTypeId: string): Promise<void> {
     if (!userId) return;
 
     try {
       const response = await fetch("/api/review", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          taskTypeId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, taskTypeId }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Review failed: ${response.status}`);
+      if (!response.ok) throw new Error(`Review failed: ${response.status}`);
+
+      const data = await response.json();
+      if (!data.skipped) {
+        setTotalReps((v) => v + 1);
       }
     } catch (error) {
       console.error("Review failed:", error);

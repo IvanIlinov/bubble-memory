@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/cn";
 import type { MemoryColor } from "@/shared/config/memoryColors";
 
-// Полные строковые классы (не собираются динамически), чтобы Tailwind JIT их не потерял.
 const MEMORY_COLOR_CLASS: Record<MemoryColor, string> = {
   none: "bg-memory-none",
   blue: "bg-memory-blue",
@@ -27,14 +26,11 @@ const MEMORY_COLOR_GLOW: Record<MemoryColor, string> = {
 };
 
 export interface BubbleProps {
-  /** Номер задания ЕГЭ (1..27) — подпись внутри бабла. */
   number: number;
   color: MemoryColor;
-  /** Текст статуса для долгого тапа, доступность (см. ТЗ). */
   statusText: string;
-  /** Уже засчитано сегодня — клик не двигает состояние, но UI может лёгким импульсом отреагировать. */
   alreadyReviewedToday?: boolean;
-  onReview?: () => void;
+  onReview?: () => void | Promise<void>;
   size?: "sm" | "md";
 }
 
@@ -47,6 +43,7 @@ export function Bubble({
   size = "md",
 }: BubbleProps) {
   const [showStatus, setShowStatus] = useState(false);
+  const [pending, setPending] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handlePointerDown() {
@@ -60,14 +57,15 @@ export function Bubble({
     }
     if (showStatus) {
       setShowStatus(false);
-      return; // долгий тап — не засчитываем клик
+      return;
     }
+    if (pending) return;
     triggerHaptic();
-    onReview?.();
+    setPending(true);
+    Promise.resolve(onReview?.()).finally(() => setPending(false));
   }
 
   function triggerHaptic() {
-    // Telegram Haptic Feedback API, если доступно (см. ТЗ, "Направление дизайна").
     const tg = (globalThis as any)?.Telegram?.WebApp;
     tg?.HapticFeedback?.impactOccurred?.(alreadyReviewedToday ? "light" : "medium");
   }
@@ -96,6 +94,7 @@ export function Bubble({
           MEMORY_COLOR_GLOW[color],
           color === "none" && "text-foam-muted",
           color === "black" && "text-foam",
+          pending && "opacity-60 cursor-wait",
         )}
       >
         {number}
