@@ -48,6 +48,7 @@ export default function HomePage() {
   const [totalReps, setTotalReps] = useState(0);
   const totalRepsRef = useRef(0);
   const [loading, setLoading] = useState(true);
+  const initDataRef = useRef("");
 
   async function loadFromServer(initData: string) {
     try {
@@ -70,10 +71,8 @@ export default function HomePage() {
       setTasks(convertTasks(serverTasks));
       const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
       
-      if (reps !== totalRepsRef.current) {
-        setTotalReps(reps);
-        totalRepsRef.current = reps;
-      }
+      setTotalReps(reps);
+      totalRepsRef.current = reps;
 
       setCachedTasks({
         userId: uid,
@@ -102,6 +101,7 @@ export default function HomePage() {
         }
 
         const initData = getTelegramInitData();
+        initDataRef.current = initData;
         const telegramUser = getTelegramUser();
 
         if (initData && telegramUser) {
@@ -133,23 +133,17 @@ export default function HomePage() {
     setTotalReps(totalRepsRef.current);
 
     try {
-      await fetch("/api/review", {
+      const response = await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: uid, taskTypeId }),
       });
 
-      // Обновляем кеш с новым значением
-      const cached = getCachedTasks();
-      if (cached) {
-        setCachedTasks({
-          ...cached,
-          tasks: cached.tasks.map(t =>
-            t.taskTypeId === taskTypeId
-              ? { ...t, repetitions: t.repetitions + 1 }
-              : t
-          ),
-        });
+      if (!response.ok) throw new Error("Review failed");
+
+      // Успешный ответ — рефрешим кеш через сервер
+      if (initDataRef.current) {
+        await loadFromServer(initDataRef.current);
       }
     } catch (error) {
       console.error("Review failed:", error);
