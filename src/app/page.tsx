@@ -10,6 +10,7 @@ import {
   getTelegramUser,
   getTelegramInitData,
 } from "@/shared/lib/telegram";
+import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
 import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
@@ -54,7 +55,7 @@ export default function HomePage() {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to load tasks: ${response.status} `);
+      throw new Error(`Failed to load tasks: ${response.status}`);
     }
 
     const data = await response.json();
@@ -63,35 +64,56 @@ export default function HomePage() {
     setUserId(String(data.userId));
 
     const serverTasks: ServerTask[] = data.tasks || [];
+    const converted = convertTasks(serverTasks);
 
-    setTasks(convertTasks(serverTasks));
+    setTasks(converted);
 
-    setTotalReps(
-      serverTasks.reduce(
-        (sum, task) => sum + (task.repetitions || 0),
-        0
-      )
+    const reps = serverTasks.reduce(
+      (sum, task) => sum + (task.repetitions || 0),
+      0
     );
+    setTotalReps(reps);
+
+    // Сохраняем userId в кеш — нужен журналу
+    setCachedTasks({
+      userId: String(data.userId),
+      user: data.user,
+      tasks: serverTasks,
+      timestamp: Date.now(),
+    });
   }
 
   useEffect(() => {
     async function init() {
       try {
+        // Сначала пробуем отдать кеш мгновенно, пока грузится сервер
+        const cached = getCachedTasks();
+        if (cached) {
+          setUser(cached.user);
+          setUserId(cached.userId);
+          setTasks(convertTasks(cached.tasks));
+          setTotalReps(
+            cached.tasks.reduce((sum, t) => sum + (t.repetitions || 0), 0)
+          );
+          setLoading(false);
+        }
+
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
         if (initData && telegramUser) {
           await loadFromServer(initData);
-        } else {
+        } else if (!cached) {
           setTasks(getMockTaskBubbles());
           setUser({ first_name: "Guest" });
         }
       } catch (error) {
         console.error("Init error:", error);
-
-        // Если сервер недоступен — показываем mock-данные
-        setTasks(getMockTaskBubbles());
-        setUser({ first_name: "Guest" });
+        const cached = getCachedTasks();
+        if (!cached) {
+          setTasks(getMockTaskBubbles());
+          setUser({ first_name: "Guest" });
+        }
       } finally {
         setLoading(false);
       }
@@ -103,9 +125,7 @@ export default function HomePage() {
   async function handleReview(taskTypeId: string) {
     setTotalReps((value) => value + 1);
 
-    if (!userId) {
-      return;
-    }
+    if (!userId) return;
 
     try {
       const response = await fetch("/api/review", {
@@ -120,7 +140,7 @@ export default function HomePage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Review failed: ${response.status} `);
+        throw new Error(`Review failed: ${response.status}`);
       }
     } catch (error) {
       console.error("Review failed:", error);
@@ -187,21 +207,16 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Tasks */}
-        {tasks.length > 0 && (
+        {tasks.length > 0 ? (
           <section className="space-y-6">
-            <TaskBubblesPanel
-              tasks={tasks}
-              onReview={handleReview}
-            />
-
+            {/* WeekBubble — ПЕРВЫМ, над заданиями */}
             <WeekBubble totalReps={totalReps} />
+
+            <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
 
             <GrowthHistory />
           </section>
-        )}
-
-        {tasks.length === 0 && (
+        ) : (
           <div className="rounded-2xl bg-deep-panel p-6 text-center text-foam-muted ring-1 ring-white/10">
             Пока нет заданий
           </div>
