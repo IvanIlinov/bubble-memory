@@ -77,11 +77,9 @@ model ReviewLog {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskTypeId String
   taskType   TaskType @relation(fields: [taskTypeId], references: [id])
-  reviewedAt   DateTime @default(now())
-  reviewedDate String
+  reviewedAt DateTime @default(now())
   previousIntervalDays Int
   previousNextReview   DateTime?
-  @@unique([userId, taskTypeId, reviewedDate])
 }
 
 model WeeklyBubble {

@@ -29,8 +29,6 @@ export default async function handler(
     intervalDays: memory.intervalDays,
   });
 
-  const today = new Date().toISOString().slice(0, 10);
-
   try {
     const [updated] = await prisma.$transaction([
       prisma.taskMemory.update({
@@ -46,7 +44,6 @@ export default async function handler(
         data: {
           userId,
           taskTypeId,
-          reviewedDate: today,
           previousIntervalDays: memory.intervalDays,
           previousNextReview: memory.nextReview,
         },
@@ -54,10 +51,7 @@ export default async function handler(
     ]);
 
     res.status(200).json({ success: true, task: updated });
-  } catch (error: any) {
-    if (error?.code === "P2002") {
-      return res.status(200).json({ success: true, skipped: true });
-    }
+  } catch (error) {
     console.error("Review error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
