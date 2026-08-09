@@ -166,7 +166,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-deep px-4 py-6 pb-24 text-foam">
       <div className="mx-auto max-w-md">
         {tasks.length > 0 ? (
-          <section className="space-y-6">
+          <section className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 p-8 space-y-8">
             <WeekBubble totalReps={totalReps} />
             <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
           </section>
