@@ -70,7 +70,6 @@ export default function HomePage() {
       setTasks(convertTasks(serverTasks));
       const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
       
-      // Обновляем только если значение реально изменилось
       if (reps !== totalRepsRef.current) {
         setTotalReps(reps);
         totalRepsRef.current = reps;
@@ -139,6 +138,19 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: uid, taskTypeId }),
       });
+
+      // Обновляем кеш с новым значением
+      const cached = getCachedTasks();
+      if (cached) {
+        setCachedTasks({
+          ...cached,
+          tasks: cached.tasks.map(t =>
+            t.taskTypeId === taskTypeId
+              ? { ...t, repetitions: t.repetitions + 1 }
+              : t
+          ),
+        });
+      }
     } catch (error) {
       console.error("Review failed:", error);
     }
