@@ -178,7 +178,7 @@ export default function HomePage() {
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-deep border-t border-white/10">
+      <nav className="fixed bottom-0 left-0 right-0 backdrop-blur-sm bg-white/5 ring-1 ring-white/10">
         <div className="mx-auto max-w-md flex items-center justify-between px-4 py-4">
           <Link
             href={"/rating" as Route}
