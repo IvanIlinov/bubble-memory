@@ -6,7 +6,6 @@ import type { Route } from "next";
 
 import { TaskBubblesPanel } from "@/widgets/task-bubbles-panel/ui/TaskBubblesPanel";
 import { WeekBubble } from "@/widgets/week-bubble/ui/WeekBubble";
-import { GrowthHistory } from "@/widgets/growth-history/ui/GrowthHistory";
 import {
   getTelegramUser,
   getTelegramInitData,
@@ -170,7 +169,6 @@ export default function HomePage() {
           <section className="space-y-6">
             <WeekBubble totalReps={totalReps} />
             <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
-            <GrowthHistory />
           </section>
         ) : (
           <div className="rounded-2xl bg-deep-panel p-6 text-center text-foam-muted ring-1 ring-white/10">
