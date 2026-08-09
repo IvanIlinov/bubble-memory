@@ -50,33 +50,41 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   async function loadFromServer(initData: string) {
-    const response = await fetch("/api/tasks", {
-      headers: { "x-telegram-init-data": initData },
-    });
+    try {
+      const response = await fetch("/api/tasks", {
+        headers: { "x-telegram-init-data": initData },
+      });
 
-    if (!response.ok) {
-      throw new Error(`Failed to load tasks: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load tasks: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      setUser(data.user);
+      const uid = String(data.userId);
+      setUserId(uid);
+      userIdRef.current = uid;
+
+      const serverTasks: ServerTask[] = data.tasks || [];
+      setTasks(convertTasks(serverTasks));
+      const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
+      
+      // Обновляем только если значение реально изменилось
+      if (reps !== totalRepsRef.current) {
+        setTotalReps(reps);
+        totalRepsRef.current = reps;
+      }
+
+      setCachedTasks({
+        userId: uid,
+        user: data.user,
+        tasks: serverTasks,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error("Load from server error:", error);
     }
-
-    const data = await response.json();
-
-    setUser(data.user);
-    const uid = String(data.userId);
-    setUserId(uid);
-    userIdRef.current = uid;
-
-    const serverTasks: ServerTask[] = data.tasks || [];
-    setTasks(convertTasks(serverTasks));
-    const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
-    setTotalReps(reps);
-    totalRepsRef.current = reps;
-
-    setCachedTasks({
-      userId: uid,
-      user: data.user,
-      tasks: serverTasks,
-      timestamp: Date.now(),
-    });
   }
 
   useEffect(() => {
@@ -122,7 +130,6 @@ export default function HomePage() {
     const uid = userIdRef.current;
     if (!uid) return;
 
-    // Оптимистичное обновление через ref
     totalRepsRef.current++;
     setTotalReps(totalRepsRef.current);
 
