@@ -69,17 +69,22 @@ export default function JournalPage() {
   }
 
   async function deleteLog(id: string) {
+    // Убираем мгновенно
+    const prev = logs;
+    setLogs((l) => l.filter((log) => log.id !== id));
+
     try {
       const initData = getTelegramInitData();
       const response = await fetch(`/api/log/${id}`, {
         method: "DELETE",
         headers: initData ? { "x-telegram-init-data": initData } : {},
       });
-      if (response.ok) {
-        setLogs((prev) => prev.filter((l) => l.id !== id));
+      if (!response.ok) {
+        // Запрос упал — возвращаем
+        setLogs(prev);
       }
-    } catch (error) {
-      console.error("Delete log error:", error);
+    } catch {
+      setLogs(prev);
     }
   }
 
