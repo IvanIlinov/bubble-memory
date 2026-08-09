@@ -43,26 +43,26 @@ export function Bubble({
   size = "md",
 }: BubbleProps) {
   const [showStatus, setShowStatus] = useState(false);
-  const [pending, setPending] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function handlePointerDown() {
+  function handlePressStart() {
     pressTimer.current = setTimeout(() => setShowStatus(true), 420);
   }
 
-  function handlePointerUp() {
+  function handlePressEnd() {
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
+  }
+
+  function handleTap() {
     if (showStatus) {
       setShowStatus(false);
       return;
     }
-    if (pending) return;
     triggerHaptic();
-    setPending(true);
-    Promise.resolve(onReview?.()).finally(() => setPending(false));
+    onReview?.();
   }
 
   function triggerHaptic() {
@@ -77,12 +77,13 @@ export function Bubble({
       <motion.button
         type="button"
         aria-label={`Задание ${number}. ${statusText}`}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
+        onPointerDown={handlePressStart}
+        onPointerUp={() => { handlePressEnd(); handleTap(); }}
         onPointerLeave={() => {
-          if (pressTimer.current) clearTimeout(pressTimer.current);
+          handlePressEnd();
           setShowStatus(false);
         }}
+        onTouchEnd={() => { handlePressEnd(); handleTap(); }}
         whileTap={{ scale: 0.88 }}
         animate={alreadyReviewedToday ? { scale: [1, 1.12, 1] } : undefined}
         transition={{ type: "spring", stiffness: 300, damping: 14 }}
@@ -94,7 +95,6 @@ export function Bubble({
           MEMORY_COLOR_GLOW[color],
           color === "none" && "text-foam-muted",
           color === "black" && "text-foam",
-          pending && "opacity-60 cursor-wait",
         )}
       >
         {number}
