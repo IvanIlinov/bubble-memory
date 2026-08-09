@@ -178,42 +178,44 @@ export default function HomePage() {
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 backdrop-blur-sm bg-white/5 ring-1 ring-white/10">
-        <div className="mx-auto max-w-md flex items-center justify-between px-4 py-4">
-          <Link
-            href={"/rating" as Route}
-            className="flex flex-col items-center gap-2 p-2 text-foam-muted hover:text-foam transition-colors"
-            aria-label="Рейтинг"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
-            </svg>
-            <span className="text-xs">Рейтинг</span>
-          </Link>
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-white/10">
+        <div className="mx-auto max-w-md px-4 py-4 backdrop-blur-md bg-white/8 rounded-t-3xl">
+          <div className="flex items-center justify-between">
+            <Link
+              href={"/rating" as Route}
+              className="flex flex-col items-center gap-2 p-2 text-foam-muted hover:text-foam transition-colors"
+              aria-label="Рейтинг"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
+              </svg>
+              <span className="text-xs">Рейтинг</span>
+            </Link>
 
-          <Link
-            href={"/profile" as Route}
-            className="flex flex-col items-center gap-2 p-2 text-foam-muted hover:text-foam transition-colors"
-            aria-label="Профиль"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span className="text-xs">Профиль</span>
-          </Link>
+            <Link
+              href={"/profile" as Route}
+              className="flex flex-col items-center gap-2 p-2 text-foam-muted hover:text-foam transition-colors"
+              aria-label="Профиль"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span className="text-xs">Профиль</span>
+            </Link>
 
-          <Link
-            href={"/journal" as Route}
-            className="flex flex-col items-center gap-2 p-2 text-foam-muted hover:text-foam transition-colors"
-            aria-label="История"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-            <span className="text-xs">История</span>
-          </Link>
+            <Link
+              href={"/journal" as Route}
+              className="flex flex-col items-center gap-2 p-2 text-foam-muted hover:text-foam transition-colors"
+              aria-label="История"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span className="text-xs">История</span>
+            </Link>
+          </div>
         </div>
       </nav>
     </main>
