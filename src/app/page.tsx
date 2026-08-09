@@ -46,6 +46,7 @@ export default function HomePage() {
   const [userId, setUserId] = useState("");
   const userIdRef = useRef("");
   const [totalReps, setTotalReps] = useState(0);
+  const totalRepsRef = useRef(0);
   const [loading, setLoading] = useState(true);
 
   async function loadFromServer(initData: string) {
@@ -66,7 +67,9 @@ export default function HomePage() {
 
     const serverTasks: ServerTask[] = data.tasks || [];
     setTasks(convertTasks(serverTasks));
-    setTotalReps(serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0));
+    const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
+    setTotalReps(reps);
+    totalRepsRef.current = reps;
 
     setCachedTasks({
       userId: uid,
@@ -85,7 +88,9 @@ export default function HomePage() {
           setUserId(cached.userId);
           userIdRef.current = cached.userId;
           setTasks(convertTasks(cached.tasks));
-          setTotalReps(cached.tasks.reduce((sum, t) => sum + (t.repetitions || 0), 0));
+          const reps = cached.tasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
+          setTotalReps(reps);
+          totalRepsRef.current = reps;
           setLoading(false);
         }
 
@@ -117,23 +122,18 @@ export default function HomePage() {
     const uid = userIdRef.current;
     if (!uid) return;
 
-    // Оптимистичное обновление — сразу показываем +1
-    setTotalReps((v) => v + 1);
+    // Оптимистичное обновление через ref
+    totalRepsRef.current++;
+    setTotalReps(totalRepsRef.current);
 
     try {
-      const response = await fetch("/api/review", {
+      await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: uid, taskTypeId }),
       });
-
-      if (!response.ok) throw new Error(`Review failed: ${response.status}`);
-
-      // Сервер ответил — проверяем успех
-      // (если вдруг на сервере ошибка, UI уже показал +1, но это редкий случай)
     } catch (error) {
       console.error("Review failed:", error);
-      // При ошибке можем откатить: setTotalReps(v => v - 1)
     }
   }
 
