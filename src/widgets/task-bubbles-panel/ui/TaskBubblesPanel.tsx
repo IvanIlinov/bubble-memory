@@ -22,7 +22,7 @@ export function TaskBubblesPanel({
           color={task.color}
           statusText={`Задание ${task.number}: ${task.title}. ${task.lastReviewLabel}.`}
           alreadyReviewedToday={task.reviewedToday}
-          onReview={() => onReview?.(task.taskTypeId) ?? Promise.resolve()}
+          onReview={() => Promise.resolve(onReview?.(task.taskTypeId))}
         />
       ))}
     </section>
