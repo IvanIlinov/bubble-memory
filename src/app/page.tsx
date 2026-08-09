@@ -8,7 +8,6 @@ import {
   getTelegramUser,
   getTelegramInitData,
 } from "@/shared/lib/telegram";
-import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
 import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
 
@@ -17,95 +16,63 @@ const isMobile = () => {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 };
 
+function convertTasks(data: any[]): MockTaskBubble[] {
+  return data.map((t: any) => ({
+    taskTypeId: t.taskTypeId,
+    number: t.number,
+    title: t.title,
+    repetitions: t.repetitions,
+    color: "none" as const,
+    lastReviewLabel: t.lastReview ? "повторено" : "не начато",
+    reviewedToday: false,
+  }));
+}
+
 export default function HomePage() {
-  const [solvedCount, setSolvedCount] = useState(0);
   const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
   const [user, setUser] = useState<any>(null);
   const [userId, setUserId] = useState<string>("");
+  const [totalReps, setTotalReps] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  async function loadFromServer(initData: string) {
+    const response = await fetch("/api/tasks", {
+      headers: {
+        "x-telegram-init-data": initData,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setUser(data.user);
+      setUserId(data.userId);
+
+      const converted = convertTasks(data.tasks || []);
+      setTasks(converted);
+
+      // Считаем сумму всех повторений
+      const total = (data.tasks || []).reduce(
+        (sum: number, t: any) => sum + (t.repetitions || 0),
+        0
+      );
+      setTotalReps(total);
+    }
+  }
 
   useEffect(() => {
     async function init() {
       try {
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
-        const mobile = isMobile();
 
-        // На мобилке всегда загружаем с сервера (не кешируем)
-        if (mobile && initData && telegramUser) {
-          const response = await fetch("/api/tasks", {
-            headers: {
-              "x-telegram-init-data": initData,
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data.user);
-            setUserId(data.userId);
-
-            const convertedTasks: MockTaskBubble[] = (data.tasks || []).map(
-              (t: any) => ({
-                taskTypeId: t.taskTypeId,
-                number: t.number,
-                title: t.title,
-                repetitions: t.repetitions,
-                color: "none" as const,
-                lastReviewLabel: "не начато",
-                reviewedToday: false,
-              })
-            );
-
-            setTasks(convertedTasks);
-            setSolvedCount(convertedTasks.filter((t) => t.repetitions > 0).length);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // На десктопе или если нет TG данных — используем кеш
-        const cached = getCachedTasks();
-        if (cached) {
-          setUser(cached.user);
-          setUserId(cached.userId);
-          setTasks(
-            cached.tasks.map((t: any) => ({
-              taskTypeId: t.taskTypeId,
-              number: t.number,
-              title: t.title,
-              repetitions: t.repetitions,
-              color: "none" as const,
-              lastReviewLabel: "не начато",
-              reviewedToday: false,
-            }))
-          );
-          setSolvedCount(cached.tasks.filter((t: any) => t.repetitions > 0).length);
+        if (initData && telegramUser) {
+          await loadFromServer(initData);
           setLoading(false);
-
-          if (!mobile && initData && telegramUser) {
-            // На десктопе синхронизируем в фоне
-            const response = await fetch("/api/tasks", {
-              headers: {
-                "x-telegram-init-data": initData,
-              },
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              setCachedTasks({
-                userId: data.userId,
-                user: data.user,
-                tasks: data.tasks,
-                timestamp: Date.now(),
-              });
-            }
-          }
           return;
         }
 
-        // Нет кеша и нет TG данных — моки
-        const mocks = getMockTaskBubbles();
-        setTasks(mocks);
+        // Нет TG данных — моки
+        setTasks(getMockTaskBubbles());
         setUser({ first_name: "Guest" });
         setLoading(false);
       } catch (error) {
@@ -118,7 +85,8 @@ export default function HomePage() {
   }, []);
 
   async function handleReview(taskTypeId: string) {
-    setSolvedCount((v) => v + 1);
+    // Оптимистичное обновление
+    setTotalReps((v) => v + 1);
 
     if (!userId) return;
 
@@ -163,7 +131,7 @@ export default function HomePage() {
       )}
 
       <div className="flex justify-center">
-        <WeekBubble solvedCount={solvedCount} targetCount={tasks.length || 27} />
+        <WeekBubble solvedCount={totalReps} targetCount={27} />
       </div>
 
       {tasks.length > 0 && (
