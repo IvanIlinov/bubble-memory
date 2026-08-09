@@ -87,7 +87,6 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
-        // Сначала загружаем из кеша мгновенно
         const cached = getCachedTasks();
         if (cached) {
           setUser(cached.user);
@@ -100,7 +99,6 @@ export default function HomePage() {
           setLoading(false);
         }
 
-        // Затем асинхронно синкруемся с сервером
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
@@ -132,24 +130,25 @@ export default function HomePage() {
     totalRepsRef.current++;
     setTotalReps(totalRepsRef.current);
 
+    // Обновляем кеш СИНХРОННО, ДО fetch — гарантирует что данные сохранятся
+    const cached = getCachedTasks();
+    if (cached) {
+      setCachedTasks({
+        ...cached,
+        tasks: cached.tasks.map(t =>
+          t.taskTypeId === taskTypeId
+            ? { ...t, repetitions: t.repetitions + 1 }
+            : t
+        ),
+      });
+    }
+
     try {
       await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: uid, taskTypeId }),
       });
-
-      const cached = getCachedTasks();
-      if (cached) {
-        setCachedTasks({
-          ...cached,
-          tasks: cached.tasks.map(t =>
-            t.taskTypeId === taskTypeId
-              ? { ...t, repetitions: t.repetitions + 1 }
-              : t
-          ),
-        });
-      }
     } catch (error) {
       console.error("Review failed:", error);
     }
