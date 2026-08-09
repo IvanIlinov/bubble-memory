@@ -87,6 +87,7 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
+        // Сначала загружаем из кеша мгновенно
         const cached = getCachedTasks();
         if (cached) {
           setUser(cached.user);
@@ -97,17 +98,18 @@ export default function HomePage() {
           setTotalReps(reps);
           totalRepsRef.current = reps;
           setLoading(false);
-          return; // Если есть кеш — не делаем loadFromServer
         }
 
+        // Затем асинхронно синкруемся с сервером
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
 
         if (initData && telegramUser) {
           await loadFromServer(initData);
-        } else {
+        } else if (!cached) {
           setTasks(getMockTaskBubbles());
           setUser({ first_name: "Guest" });
+          setLoading(false);
         }
       } catch (error) {
         console.error("Init error:", error);
@@ -116,7 +118,6 @@ export default function HomePage() {
           setTasks(getMockTaskBubbles());
           setUser({ first_name: "Guest" });
         }
-      } finally {
         setLoading(false);
       }
     }
