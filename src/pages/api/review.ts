@@ -13,56 +13,49 @@ export default async function handler(
   try {
     const { userId, taskTypeId } = req.body;
 
-    console.log("📍 /api/review:", { userId, taskTypeId });
-
     if (!userId || !taskTypeId) {
-      console.log("❌ Missing fields");
-      return res.status(400).json({ error: "Missing userId or taskTypeId" });
+      return res.status(400).json({ error: "Missing fields" });
     }
 
-    console.log("🔍 Finding memory...");
     const memory = await prisma.taskMemory.findUnique({
       where: {
         userId_taskTypeId: { userId, taskTypeId },
       },
     });
 
-    console.log("📊 Memory found:", memory?.id);
-
     if (!memory) {
-      console.log("❌ Task not found");
       return res.status(404).json({ error: "Task not found" });
     }
 
-    console.log("🔄 Updating with ReviewAlgorithm...");
     const nextReview = fixedLadderReviewAlgorithm.computeNext({
       repetitions: memory.repetitions,
       intervalDays: memory.intervalDays,
     });
 
-    console.log("📝 Next review:", nextReview);
+    // Обновляем TaskMemory и создаём ReviewLog в одной транзакции
+    const [updated] = await prisma.$transaction([
+      prisma.taskMemory.update({
+        where: { id: memory.id },
+        data: {
+          repetitions: nextReview.repetitions,
+          intervalDays: nextReview.intervalDays,
+          lastReview: new Date(),
+          nextReview: nextReview.nextReview,
+        },
+      }),
+      prisma.reviewLog.create({
+        data: {
+          userId,
+          taskTypeId,
+          previousIntervalDays: memory.intervalDays,
+          previousNextReview: memory.nextReview,
+        },
+      }),
+    ]);
 
-    const updated = await prisma.taskMemory.update({
-      where: { id: memory.id },
-      data: {
-        repetitions: nextReview.repetitions,
-        intervalDays: nextReview.intervalDays,
-        lastReview: new Date(),
-        nextReview: nextReview.nextReview,
-      },
-    });
-
-    console.log("✅ Updated:", updated);
-
-    res.status(200).json({
-      success: true,
-      task: updated,
-    });
+    res.status(200).json({ success: true, task: updated });
   } catch (error) {
-    console.error("❌ API Error:", error);
-    res.status(500).json({ 
-      error: "Internal server error",
-      details: error instanceof Error ? error.message : String(error)
-    });
+    console.error("Review error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 }
