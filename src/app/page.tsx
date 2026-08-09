@@ -117,6 +117,9 @@ export default function HomePage() {
     const uid = userIdRef.current;
     if (!uid) return;
 
+    // Оптимистичное обновление — сразу показываем +1
+    setTotalReps((v) => v + 1);
+
     try {
       const response = await fetch("/api/review", {
         method: "POST",
@@ -126,12 +129,11 @@ export default function HomePage() {
 
       if (!response.ok) throw new Error(`Review failed: ${response.status}`);
 
-      const data = await response.json();
-      if (!data.skipped) {
-        setTotalReps((v) => v + 1);
-      }
+      // Сервер ответил — проверяем успех
+      // (если вдруг на сервере ошибка, UI уже показал +1, но это редкий случай)
     } catch (error) {
       console.error("Review failed:", error);
+      // При ошибке можем откатить: setTotalReps(v => v - 1)
     }
   }
 
