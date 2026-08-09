@@ -10,8 +10,7 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
   return (
     <div className="flex flex-col items-center gap-3 -ml-2">
       <div
-        className="relative h-40 w-40 overflow-hidden rounded-full ring-1 ring-white/10 bg-deep-panel shadow-bubble-lg animate-breathe"
-        role="img"
+        className="relative h-44 w-44 sm:h-52 sm:w-52 lg:h-64 lg:w-64 overflow-hidden rounded-full ring-1 ring-white/10 bg-deep-panel shadow-bubble-lg animate-breathe" role="img"
         aria-label={`Пузырь памяти: ${totalReps} повторений`}
       >
         <motion.div

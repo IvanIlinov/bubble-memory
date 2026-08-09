@@ -70,7 +70,7 @@ export default function HomePage() {
       const serverTasks: ServerTask[] = data.tasks || [];
       setTasks(convertTasks(serverTasks));
       const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
-      
+
       setTotalReps(reps);
       totalRepsRef.current = reps;
 
@@ -163,7 +163,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-deep px-4 py-6 pb-32 text-foam sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-deep px-4 py-6 pb-48 text-foam sm:px-6 lg:px-8">
       <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
         {tasks.length > 0 ? (
           <section className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 p-8 space-y-8">
