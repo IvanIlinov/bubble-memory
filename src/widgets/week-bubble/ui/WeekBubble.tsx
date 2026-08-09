@@ -2,14 +2,9 @@
 
 import { motion } from "framer-motion";
 
-export function WeekBubble({
-  solvedCount,
-  targetCount,
-}: {
-  solvedCount: number;
-  targetCount: number;
-}) {
-  const progress = targetCount > 0 ? Math.min(solvedCount / targetCount, 1) : 0;
+export function WeekBubble({ totalReps }: { totalReps: number }) {
+  const target = 27;
+  const progress = Math.min(totalReps / target, 1);
   const fillPercent = Math.round(progress * 100);
 
   return (
@@ -17,9 +12,8 @@ export function WeekBubble({
       <div
         className="relative h-44 w-44 overflow-hidden rounded-full ring-1 ring-white/10 bg-deep-panel shadow-bubble-lg animate-breathe"
         role="img"
-        aria-label={`Недельный пузырь памяти: ${solvedCount} из ${targetCount}`}
+        aria-label={`Пузырь памяти: ${totalReps} повторений`}
       >
-        {/* "Вода" — заполнение по прогрессу недели */}
         <motion.div
           className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-living to-living-glow/80"
           initial={false}
@@ -28,11 +22,10 @@ export function WeekBubble({
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="font-display text-3xl text-foam drop-shadow">
-            {solvedCount}
-            <span className="text-foam-muted">/{targetCount}</span>
+            {totalReps}
           </span>
           <span className="mt-1 text-[11px] uppercase tracking-wide text-foam-muted">
-            эта неделя
+            повторений
           </span>
         </div>
       </div>
