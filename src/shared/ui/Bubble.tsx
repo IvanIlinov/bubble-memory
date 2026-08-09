@@ -44,8 +44,10 @@ export function Bubble({
 }: BubbleProps) {
   const [showStatus, setShowStatus] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tapProcessed = useRef(false);
 
   function handlePressStart() {
+    tapProcessed.current = false;
     pressTimer.current = setTimeout(() => setShowStatus(true), 420);
   }
 
@@ -57,6 +59,9 @@ export function Bubble({
   }
 
   function handleTap() {
+    if (tapProcessed.current) return;
+    tapProcessed.current = true;
+
     if (showStatus) {
       setShowStatus(false);
       return;
