@@ -48,7 +48,6 @@ export default function HomePage() {
   const [totalReps, setTotalReps] = useState(0);
   const totalRepsRef = useRef(0);
   const [loading, setLoading] = useState(true);
-  const initDataRef = useRef("");
 
   async function loadFromServer(initData: string) {
     try {
@@ -98,15 +97,15 @@ export default function HomePage() {
           setTotalReps(reps);
           totalRepsRef.current = reps;
           setLoading(false);
+          return; // Если есть кеш — не делаем loadFromServer
         }
 
         const initData = getTelegramInitData();
-        initDataRef.current = initData;
         const telegramUser = getTelegramUser();
 
         if (initData && telegramUser) {
           await loadFromServer(initData);
-        } else if (!cached) {
+        } else {
           setTasks(getMockTaskBubbles());
           setUser({ first_name: "Guest" });
         }
@@ -133,17 +132,22 @@ export default function HomePage() {
     setTotalReps(totalRepsRef.current);
 
     try {
-      const response = await fetch("/api/review", {
+      await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: uid, taskTypeId }),
       });
 
-      if (!response.ok) throw new Error("Review failed");
-
-      // Успешный ответ — рефрешим кеш через сервер
-      if (initDataRef.current) {
-        await loadFromServer(initDataRef.current);
+      const cached = getCachedTasks();
+      if (cached) {
+        setCachedTasks({
+          ...cached,
+          tasks: cached.tasks.map(t =>
+            t.taskTypeId === taskTypeId
+              ? { ...t, repetitions: t.repetitions + 1 }
+              : t
+          ),
+        });
       }
     } catch (error) {
       console.error("Review failed:", error);
