@@ -16,39 +16,46 @@ export default async function handler(
     return res.status(400).json({ error: "Missing fields" });
   }
 
-  const memory = await prisma.taskMemory.findUnique({
-    where: { userId_taskTypeId: { userId, taskTypeId } },
-  });
-
-  if (!memory) {
-    return res.status(404).json({ error: "Task not found" });
-  }
-
-  const nextReview = fixedLadderReviewAlgorithm.computeNext({
-    repetitions: memory.repetitions,
-    intervalDays: memory.intervalDays,
-  });
-
   try {
-    const [updated] = await prisma.$transaction([
-      prisma.taskMemory.update({
-        where: { id: memory.id },
+    const [updated] = await prisma.$transaction(async (tx) => {
+      // Читаем с блокировкой (SELECT ... FOR UPDATE)
+      const memory = await tx.$queryRaw<any[]>`
+        SELECT * FROM "TaskMemory" 
+        WHERE "userId" = ${userId} AND "taskTypeId" = ${taskTypeId}
+        FOR UPDATE
+      `;
+
+      if (!memory || memory.length === 0) {
+        throw new Error("Task not found");
+      }
+
+      const m = memory[0];
+      const nextReview = fixedLadderReviewAlgorithm.computeNext({
+        repetitions: m.intervalDays,
+        intervalDays: m.intervalDays,
+      });
+
+      const updated = await tx.taskMemory.update({
+        where: { id: m.id },
         data: {
-          repetitions: nextReview.repetitions,
+          repetitions: { increment: 1 },
           intervalDays: nextReview.intervalDays,
           lastReview: new Date(),
           nextReview: nextReview.nextReview,
         },
-      }),
-      prisma.reviewLog.create({
+      });
+
+      await tx.reviewLog.create({
         data: {
           userId,
           taskTypeId,
-          previousIntervalDays: memory.intervalDays,
-          previousNextReview: memory.nextReview,
+          previousIntervalDays: m.intervalDays,
+          previousNextReview: m.nextReview,
         },
-      }),
-    ]);
+      });
+
+      return [updated];
+    });
 
     res.status(200).json({ success: true, task: updated });
   } catch (error) {
