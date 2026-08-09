@@ -10,40 +10,28 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const { userId, taskTypeId } = req.body;
+
+  if (!userId || !taskTypeId) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  const memory = await prisma.taskMemory.findUnique({
+    where: { userId_taskTypeId: { userId, taskTypeId } },
+  });
+
+  if (!memory) {
+    return res.status(404).json({ error: "Task not found" });
+  }
+
+  const nextReview = fixedLadderReviewAlgorithm.computeNext({
+    repetitions: memory.repetitions,
+    intervalDays: memory.intervalDays,
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+
   try {
-    const { userId, taskTypeId } = req.body;
-
-    if (!userId || !taskTypeId) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
-
-    const memory = await prisma.taskMemory.findUnique({
-      where: {
-        userId_taskTypeId: { userId, taskTypeId },
-      },
-    });
-
-    if (!memory) {
-      return res.status(404).json({ error: "Task not found" });
-    }
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const alreadyToday = await prisma.reviewLog.findFirst({
-      where: { userId, taskTypeId, reviewedAt: { gte: todayStart } },
-    });
-
-    if (alreadyToday) {
-      return res.status(200).json({ success: true, skipped: true });
-    }
-
-    const nextReview = fixedLadderReviewAlgorithm.computeNext({
-      repetitions: memory.repetitions,
-      intervalDays: memory.intervalDays,
-    });
-
-    // Обновляем TaskMemory и создаём ReviewLog в одной транзакции
     const [updated] = await prisma.$transaction([
       prisma.taskMemory.update({
         where: { id: memory.id },
@@ -58,6 +46,7 @@ export default async function handler(
         data: {
           userId,
           taskTypeId,
+          reviewedDate: today,
           previousIntervalDays: memory.intervalDays,
           previousNextReview: memory.nextReview,
         },
@@ -65,7 +54,10 @@ export default async function handler(
     ]);
 
     res.status(200).json({ success: true, task: updated });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2002") {
+      return res.status(200).json({ success: true, skipped: true });
+    }
     console.error("Review error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
