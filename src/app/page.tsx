@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { TaskBubblesPanel } from "@/widgets/task-bubbles-panel/ui/TaskBubblesPanel";
@@ -44,14 +44,13 @@ export default function HomePage() {
   const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [userId, setUserId] = useState("");
+  const userIdRef = useRef("");
   const [totalReps, setTotalReps] = useState(0);
   const [loading, setLoading] = useState(true);
 
   async function loadFromServer(initData: string) {
     const response = await fetch("/api/tasks", {
-      headers: {
-        "x-telegram-init-data": initData,
-      },
+      headers: { "x-telegram-init-data": initData },
     });
 
     if (!response.ok) {
@@ -61,22 +60,16 @@ export default function HomePage() {
     const data = await response.json();
 
     setUser(data.user);
-    setUserId(String(data.userId));
+    const uid = String(data.userId);
+    setUserId(uid);
+    userIdRef.current = uid;
 
     const serverTasks: ServerTask[] = data.tasks || [];
-    const converted = convertTasks(serverTasks);
+    setTasks(convertTasks(serverTasks));
+    setTotalReps(serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0));
 
-    setTasks(converted);
-
-    const reps = serverTasks.reduce(
-      (sum, task) => sum + (task.repetitions || 0),
-      0
-    );
-    setTotalReps(reps);
-
-    // Сохраняем userId в кеш — нужен журналу
     setCachedTasks({
-      userId: String(data.userId),
+      userId: uid,
       user: data.user,
       tasks: serverTasks,
       timestamp: Date.now(),
@@ -86,15 +79,13 @@ export default function HomePage() {
   useEffect(() => {
     async function init() {
       try {
-        // Сначала пробуем отдать кеш мгновенно, пока грузится сервер
         const cached = getCachedTasks();
         if (cached) {
           setUser(cached.user);
           setUserId(cached.userId);
+          userIdRef.current = cached.userId;
           setTasks(convertTasks(cached.tasks));
-          setTotalReps(
-            cached.tasks.reduce((sum, t) => sum + (t.repetitions || 0), 0)
-          );
+          setTotalReps(cached.tasks.reduce((sum, t) => sum + (t.repetitions || 0), 0));
           setLoading(false);
         }
 
@@ -123,13 +114,14 @@ export default function HomePage() {
   }, []);
 
   async function handleReview(taskTypeId: string): Promise<void> {
-    if (!userId) return;
+    const uid = userIdRef.current;
+    if (!uid) return;
 
     try {
       const response = await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, taskTypeId }),
+        body: JSON.stringify({ userId: uid, taskTypeId }),
       });
 
       if (!response.ok) throw new Error(`Review failed: ${response.status}`);
@@ -154,7 +146,6 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-deep px-4 py-6 text-foam">
       <div className="mx-auto max-w-md">
-        {/* Header */}
         <header className="mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -163,24 +154,13 @@ export default function HomePage() {
                 не выполняй задания — заботься о памяти
               </p>
             </div>
-
             <div className="flex items-center gap-2">
               <Link
                 href="/journal"
                 className="rounded-full bg-deep-panel p-2 text-foam-muted ring-1 ring-white/10 transition-colors hover:text-foam"
                 aria-label="Журнал"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                   <line x1="16" y1="13" x2="8" y2="13" />
@@ -188,7 +168,6 @@ export default function HomePage() {
                   <polyline points="10 9 9 9 8 9" />
                 </svg>
               </Link>
-
               <div className="rounded-full bg-deep-panel px-3 py-1 text-xs text-gold ring-1 ring-gold/30">
                 Деревянный
               </div>
@@ -196,7 +175,6 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Greeting */}
         {user && (
           <div className="mb-6 text-center text-sm text-foam">
             Привет, {user.first_name}!
@@ -205,11 +183,8 @@ export default function HomePage() {
 
         {tasks.length > 0 ? (
           <section className="space-y-6">
-            {/* WeekBubble — ПЕРВЫМ, над заданиями */}
             <WeekBubble totalReps={totalReps} />
-
             <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
-
             <GrowthHistory />
           </section>
         ) : (
