@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Route } from "next";
 
 import { TaskBubblesPanel } from "@/widgets/task-bubbles-panel/ui/TaskBubblesPanel";
@@ -39,6 +40,80 @@ function convertTasks(data: ServerTask[]): MockTaskBubble[] {
     lastReviewLabel: t.lastReview ? "повторено" : "не начато",
     reviewedToday: false,
   }));
+}
+
+const NAV_LINKS = [
+  {
+    href: "/rating",
+    label: "Рейтинг",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/profile",
+    label: "Профиль",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+  },
+  {
+    href: "/journal",
+    label: "История",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </svg>
+    ),
+  },
+];
+
+function BottomNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="fixed bottom-4 left-0 right-0 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
+        <div
+          className="rounded-full px-4 py-2 flex items-center justify-center gap-2"
+          style={{
+            background: "linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 16px 40px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)",
+            backdropFilter: "blur(24px)",
+          }}
+        >
+          {NAV_LINKS.map(({ href, label, icon }) => {
+            const isActive = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href as Route}
+                aria-label={label}
+                className="flex flex-col items-center gap-1 px-5 py-2 rounded-full transition-all duration-200"
+                style={isActive ? {
+                  background: "rgba(82, 216, 224, 0.08)",
+                  border: "1px solid #52D8E0",
+                  boxShadow: "0 0 0 1px #52D8E0, 0 0 16px -4px #52D8E0",
+                  color: "#52D8E0",
+                } : {
+                  color: "rgba(255,255,255,0.45)",
+                  border: "1px solid transparent",
+                }}
+              >
+                {icon}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </nav>
+  );
 }
 
 export default function HomePage() {
@@ -146,7 +221,6 @@ export default function HomePage() {
       className="min-h-screen px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8"
       style={{ background: "radial-gradient(ellipse at 50% -10%, #0E4060 0%, #071828 45%, #050E1A 100%)" }}
     >
-      {/* Световое пятно от пузыря сверху */}
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 opacity-20 blur-3xl rounded-full"
         style={{ background: "radial-gradient(circle, #52D8E0 0%, transparent 70%)" }}
@@ -172,51 +246,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-4 left-0 right-0 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
-          <div
-            className="rounded-full px-8 py-3 flex items-center justify-center gap-10"
-            style={{
-              background: "linear-gradient(160deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%)",
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.1), 0 16px 40px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12)",
-              backdropFilter: "blur(24px)",
-            }}
-          >
-            <Link
-              href={"/rating" as Route}
-              className="flex items-center justify-center w-11 h-11 rounded-full text-foam-muted hover:text-foam transition-all hover:bg-white/10"
-              aria-label="Рейтинг"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
-              </svg>
-            </Link>
-
-            <Link
-              href={"/profile" as Route}
-              className="flex items-center justify-center w-11 h-11 rounded-full text-foam-muted hover:text-foam transition-all hover:bg-white/10"
-              aria-label="Профиль"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </Link>
-
-            <Link
-              href={"/journal" as Route}
-              className="flex items-center justify-center w-11 h-11 rounded-full text-foam-muted hover:text-foam transition-all hover:bg-white/10"
-              aria-label="История"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <BottomNav />
     </main>
   );
 }
