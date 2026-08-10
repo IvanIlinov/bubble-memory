@@ -70,7 +70,7 @@ export default function HomePage() {
       const serverTasks: ServerTask[] = data.tasks || [];
       setTasks(convertTasks(serverTasks));
       const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
-      
+
       setTotalReps(reps);
       totalRepsRef.current = reps;
 
@@ -180,7 +180,7 @@ export default function HomePage() {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-4 left-0 right-0 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
-          <div className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 px-6 py-2.5 flex items-center justify-between">
+          <div className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 px-6 py-2.5 flex items-center justify-center gap-8">
             <Link
               href={"/rating" as Route}
               className="flex flex-col items-center gap-1 py-2 text-foam-muted hover:text-foam transition-colors"
