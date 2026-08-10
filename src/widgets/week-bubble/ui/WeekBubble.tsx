@@ -8,9 +8,10 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
   const fillPercent = Math.round(progress * 100);
 
   return (
-    <div className="flex flex-col items-center gap-3 -ml-2">
+    <div className="flex flex-col items-center gap-3 -ml-4">
       <div
-        className="relative h-44 w-44 sm:h-52 sm:w-52 lg:h-64 lg:w-64 overflow-hidden rounded-full ring-1 ring-white/10 bg-deep-panel shadow-bubble-lg animate-breathe" role="img"
+        className="relative h-[11.25rem] w-[11.25rem] sm:h-[13.25rem] sm:w-[13.25rem] lg:h-[16.25rem] lg:w-[16.25rem] overflow-hidden rounded-full ring-1 ring-white/10 bg-deep-panel shadow-bubble-lg animate-breathe"
+        role="img"
         aria-label={`Пузырь памяти: ${totalReps} повторений`}
       >
         <motion.div
