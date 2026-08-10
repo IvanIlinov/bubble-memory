@@ -97,13 +97,14 @@ function BottomNav() {
                 aria-label={label}
                 className="flex flex-col items-center gap-1 px-5 py-2 rounded-full transition-all duration-200"
                 style={isActive ? {
-                  background: "rgba(82, 216, 224, 0.08)",
-                  border: "1px solid #52D8E0",
-                  boxShadow: "0 0 0 1px #52D8E0, 0 0 16px -4px #52D8E0",
+                  background: "rgba(82, 216, 224, 0.12)",
+                  border: "1px solid rgba(82, 216, 224, 0.8)",
+                  boxShadow: "0 0 0 1px rgba(82,216,224,0.4), 0 0 20px -4px rgba(82,216,224,0.6)",
                   color: "#52D8E0",
                 } : {
-                  color: "rgba(255,255,255,0.45)",
-                  border: "1px solid transparent",
+                  color: "rgba(255,255,255,0.75)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  boxShadow: "0 0 12px -4px rgba(82,216,224,0.2)",
                 }}
               >
                 {icon}
