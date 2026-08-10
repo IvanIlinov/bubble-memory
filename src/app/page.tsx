@@ -166,7 +166,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-deep px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8">
       <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
         {tasks.length > 0 ? (
-          <section className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 p-6 space-y-4">
+          <section className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 p-6 space-y-4 lg:space-y-8">
             <WeekBubble totalReps={totalReps} />
             <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
           </section>
@@ -180,41 +180,47 @@ export default function HomePage() {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-4 left-0 right-0 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
-          <div className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 p-2.5 flex items-center justify-between">
-            <Link
-              href={"/rating" as Route}
-              className="flex flex-col items-center gap-1 p-2 text-foam-muted hover:text-foam transition-colors"
-              aria-label="Рейтинг"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
-              </svg>
-              <span className="text-[10px]">Рейтинг</span>
-            </Link>
+          <div className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 p-2.5">
+            <div className="grid grid-cols-6 gap-2.5 sm:grid-cols-7 lg:grid-cols-9">
+              <Link
+                href={"/rating" as Route}
+                className="flex flex-col items-center gap-1 py-2 text-foam-muted hover:text-foam transition-colors"
+                aria-label="Рейтинг"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
+                </svg>
+                <span className="text-[10px]">Рейтинг</span>
+              </Link>
 
-            <Link
-              href={"/profile" as Route}
-              className="flex flex-col items-center gap-1 p-2 text-foam-muted hover:text-foam transition-colors"
-              aria-label="Профиль"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              <span className="text-[10px]">Профиль</span>
-            </Link>
+              <div />
+              <div className="flex justify-center">
+                <Link
+                  href={"/profile" as Route}
+                  className="flex flex-col items-center gap-1 py-2 text-foam-muted hover:text-foam transition-colors"
+                  aria-label="Профиль"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <span className="text-[10px]">Профиль</span>
+                </Link>
+              </div>
+              <div />
 
-            <Link
-              href={"/journal" as Route}
-              className="flex flex-col items-center gap-1 p-2 text-foam-muted hover:text-foam transition-colors"
-              aria-label="История"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-              <span className="text-[10px]">История</span>
-            </Link>
+              <Link
+                href={"/journal" as Route}
+                className="col-span-2 sm:col-span-1 flex flex-col items-center gap-1 py-2 text-foam-muted hover:text-foam transition-colors"
+                aria-label="История"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <span className="text-[10px]">История</span>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>

@@ -10,7 +10,7 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
       <div
-        className="relative h-[11.75rem] w-[11.75rem] sm:h-[13.75rem] sm:w-[13.75rem] lg:h-[16.75rem] lg:w-[16.75rem] overflow-hidden rounded-full ring-1 ring-white/10 bg-deep-panel shadow-bubble-lg animate-breathe"
+        className="relative h-[11.75rem] w-[11.75rem] sm:h-[13.75rem] sm:w-[13.75rem] lg:h-[18.25rem] lg:w-[18.25rem] overflow-hidden rounded-full ring-1 ring-white/10 bg-deep-panel shadow-bubble-lg animate-breathe"
         role="img"
         aria-label={`Пузырь памяти: ${totalReps} повторений`}
       >
