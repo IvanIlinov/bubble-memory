@@ -16,13 +16,13 @@ const MEMORY_COLOR_CLASS: Record<MemoryColor, string> = {
 };
 
 const MEMORY_COLOR_GLOW: Record<MemoryColor, string> = {
-  none: "shadow-none",
-  blue: "shadow-[0_0_18px_-4px_rgba(79,168,224,0.7)]",
-  green: "shadow-[0_0_18px_-4px_rgba(76,201,138,0.7)]",
-  yellow: "shadow-[0_0_18px_-4px_rgba(232,212,77,0.7)]",
-  orange: "shadow-[0_0_18px_-4px_rgba(232,149,77,0.7)]",
-  red: "shadow-[0_0_18px_-4px_rgba(224,85,79,0.8)]",
-  black: "shadow-[0_0_18px_-4px_rgba(0,0,0,0.9)]",
+  none: "shadow-[0_0_12px_-4px_rgba(82,216,224,0.15)]",
+  blue: "shadow-[0_0_20px_-3px_rgba(79,168,224,0.85)]",
+  green: "shadow-[0_0_20px_-3px_rgba(76,201,138,0.85)]",
+  yellow: "shadow-[0_0_20px_-3px_rgba(232,212,77,0.85)]",
+  orange: "shadow-[0_0_20px_-3px_rgba(232,149,77,0.85)]",
+  red: "shadow-[0_0_20px_-3px_rgba(224,85,79,0.9)]",
+  black: "shadow-[0_0_20px_-3px_rgba(0,0,0,0.9)]",
 };
 
 export interface BubbleProps {
