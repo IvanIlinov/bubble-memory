@@ -83,8 +83,8 @@ function BottomNav() {
         <div
           className="rounded-full px-4 py-2 flex items-center justify-center gap-2"
           style={{
-            background: "linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
-            boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 16px 40px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)",
+            background: "linear-gradient(160deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.1), 0 16px 40px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12)",
             backdropFilter: "blur(24px)",
           }}
         >
@@ -97,14 +97,14 @@ function BottomNav() {
                 aria-label={label}
                 className="flex flex-col items-center gap-1 px-5 py-2 rounded-full transition-all duration-200"
                 style={isActive ? {
-                  background: "rgba(82, 216, 224, 0.12)",
-                  border: "1px solid rgba(82, 216, 224, 0.8)",
-                  boxShadow: "0 0 0 1px rgba(82,216,224,0.4), 0 0 20px -4px rgba(82,216,224,0.6)",
-                  color: "#52D8E0",
+                  background: "linear-gradient(135deg, rgba(254,154,52,0.22) 0%, rgba(255,84,76,0.18) 100%)",
+                  border: "1px solid rgba(254,154,52,0.85)",
+                  boxShadow: "0 0 0 1px rgba(254,154,52,0.4), 0 0 22px -3px rgba(254,154,52,0.7)",
+                  color: "#FFC978",
                 } : {
                   color: "rgba(255,255,255,0.75)",
                   border: "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: "0 0 12px -4px rgba(82,216,224,0.2)",
+                  boxShadow: "0 0 12px -4px rgba(42,176,163,0.3)",
                 }}
               >
                 {icon}
@@ -211,7 +211,10 @@ export default function HomePage() {
 
   if (loading && tasks.length === 0) {
     return (
-      <main className="flex min-h-screen items-center justify-center" style={{ background: "radial-gradient(ellipse at 50% 0%, #0D3348 0%, #050E1A 70%)" }}>
+      <main
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: "radial-gradient(ellipse at 50% 0%, #0F4A40 0%, #04211D 70%)" }}
+      >
         <div className="text-foam-muted">Загружаю...</div>
       </main>
     );
@@ -219,12 +222,24 @@ export default function HomePage() {
 
   return (
     <main
-      className="min-h-screen px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8"
-      style={{ background: "radial-gradient(ellipse at 50% -10%, #0E4060 0%, #071828 45%, #050E1A 100%)" }}
+      className="relative min-h-screen overflow-hidden px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8"
+      style={{
+        background:
+          "radial-gradient(ellipse at 50% -10%, #12594C 0%, #0A3A32 40%, #04211D 100%)",
+      }}
     >
+      {/* Живые цветовые пятна — воодушевление */}
       <div
-        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 opacity-20 blur-3xl rounded-full"
-        style={{ background: "radial-gradient(circle, #52D8E0 0%, transparent 70%)" }}
+        className="pointer-events-none fixed -top-10 -left-16 w-72 h-72 opacity-30 blur-3xl rounded-full animate-drift"
+        style={{ background: "radial-gradient(circle, #FF544C 0%, transparent 70%)" }}
+      />
+      <div
+        className="pointer-events-none fixed top-10 right-[-4rem] w-80 h-80 opacity-25 blur-3xl rounded-full animate-drift"
+        style={{ background: "radial-gradient(circle, #FFE458 0%, transparent 70%)", animationDelay: "3s" }}
+      />
+      <div
+        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 opacity-25 blur-3xl rounded-full"
+        style={{ background: "radial-gradient(circle, #2AB0A3 0%, transparent 70%)" }}
       />
 
       <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl relative">
@@ -232,9 +247,10 @@ export default function HomePage() {
           <section
             className="rounded-3xl p-6 space-y-4 lg:space-y-8"
             style={{
-              background: "linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)",
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 32px 64px -16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
-              backdropFilter: "blur(20px)",
+              background: "linear-gradient(160deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)",
+              boxShadow:
+                "0 0 0 1px rgba(255,255,255,0.12), 0 32px 64px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(254,154,52,0.04)",
+              backdropFilter: "blur(22px)",
             }}
           >
             <WeekBubble totalReps={totalReps} />

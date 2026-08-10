@@ -16,13 +16,13 @@ const MEMORY_COLOR_CLASS: Record<MemoryColor, string> = {
 };
 
 const MEMORY_COLOR_GLOW: Record<MemoryColor, string> = {
-  none: "shadow-[0_0_12px_-4px_rgba(82,216,224,0.15)]",
-  blue: "shadow-[0_0_20px_-3px_rgba(79,168,224,0.85)]",
-  green: "shadow-[0_0_20px_-3px_rgba(76,201,138,0.85)]",
-  yellow: "shadow-[0_0_20px_-3px_rgba(232,212,77,0.85)]",
-  orange: "shadow-[0_0_20px_-3px_rgba(232,149,77,0.85)]",
-  red: "shadow-[0_0_20px_-3px_rgba(224,85,79,0.9)]",
-  black: "shadow-[0_0_20px_-3px_rgba(0,0,0,0.9)]",
+  none: "shadow-[0_0_14px_-4px_rgba(42,176,163,0.35)]",
+  blue: "shadow-[0_0_22px_-3px_rgba(42,176,163,0.9)]",
+  green: "shadow-[0_0_22px_-3px_rgba(52,211,153,0.9)]",
+  yellow: "shadow-[0_0_22px_-3px_rgba(255,228,88,0.9)]",
+  orange: "shadow-[0_0_22px_-3px_rgba(254,154,52,0.95)]",
+  red: "shadow-[0_0_22px_-3px_rgba(255,84,76,1)]",
+  black: "shadow-[0_0_18px_-3px_rgba(0,0,0,0.9)]",
 };
 
 export interface BubbleProps {
@@ -93,8 +93,9 @@ export function Bubble({
         animate={alreadyReviewedToday ? { scale: [1, 1.12, 1] } : undefined}
         transition={{ type: "spring", stiffness: 300, damping: 14 }}
         className={cn(
-          "relative flex items-center justify-center rounded-full font-body font-semibold text-deep/90",
-          "ring-1 ring-white/10 backdrop-blur-sm transition-colors",
+          "relative flex items-center justify-center rounded-full font-body font-bold text-deep",
+          "ring-1 ring-white/25 backdrop-blur-sm transition-colors",
+          "before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-br before:from-white/35 before:via-transparent before:to-black/20",
           dimension,
           MEMORY_COLOR_CLASS[color],
           MEMORY_COLOR_GLOW[color],
@@ -102,7 +103,7 @@ export function Bubble({
           color === "black" && "text-foam",
         )}
       >
-        {number}
+        <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(255,255,255,0.3)]">{number}</span>
       </motion.button>
 
       {showStatus && (

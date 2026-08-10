@@ -6,38 +6,40 @@ const config: Config = {
     extend: {
       colors: {
         deep: {
-          DEFAULT: "#071620",
-          panel: "#0E2333",
-          panel2: "#122B3E",
+          DEFAULT: "#04211D",
+          panel: "#0A332C",
+          panel2: "#0F3F37",
         },
         foam: {
-          DEFAULT: "#EAF6F6",
-          muted: "#7FA0AC",
-          dim: "#4F6C78",
+          DEFAULT: "#FFF9F2",
+          muted: "#9FC4BC",
+          dim: "#5E8880",
         },
         living: {
-          DEFAULT: "#52D8E0",
-          soft: "#2E7C88",
-          glow: "#8CF0F2",
+          DEFAULT: "#2AB0A3",
+          soft: "#1C7A70",
+          glow: "#5FE0D0",
         },
         gold: {
-          DEFAULT: "#E7B65C",
-          soft: "#B98B3B",
+          DEFAULT: "#FFE458",
+          soft: "#E0BC3E",
+        },
+        coral: {
+          DEFAULT: "#FF544C",
+          soft: "#FF8079",
+        },
+        melon: {
+          DEFAULT: "#FE9A34",
+          soft: "#FFBC72",
         },
         memory: {
-          none: "#3A4A52",
-          blue: "#4FA8E0",
-          green: "#4CC98A",
-          yellow: "#E8D44D",
-          orange: "#E8954D",
-          red: "#E0554F",
-          black: "#17181B",
-        },
-        nature: {
-          dark: "#0D2B1A",
-          mid: "#1A5C35",
-          light: "#2D9E5F",
-          glow: "#4FCB84",
+          none: "#1B4B44",
+          blue: "#2AB0A3",
+          green: "#34D399",
+          yellow: "#FFE458",
+          orange: "#FE9A34",
+          red: "#FF544C",
+          black: "#0A1512",
         },
       },
       fontFamily: {
@@ -45,8 +47,8 @@ const config: Config = {
         body: ["var(--font-body)"],
       },
       boxShadow: {
-        bubble: "0 0 40px -8px rgba(82, 216, 224, 0.45)",
-        "bubble-lg": "0 0 80px -10px rgba(82, 216, 224, 0.35)",
+        bubble: "0 0 40px -8px rgba(42, 176, 163, 0.5)",
+        "bubble-lg": "0 0 90px -10px rgba(42, 176, 163, 0.4)",
       },
       keyframes: {
         breathe: {
@@ -57,10 +59,15 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        drift: {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(20px, -15px)" },
+        },
       },
       animation: {
         breathe: "breathe 5.5s ease-in-out infinite",
         float: "float 7s ease-in-out infinite",
+        drift: "drift 12s ease-in-out infinite",
       },
     },
   },
