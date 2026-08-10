@@ -5,7 +5,6 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Базовая палитра: тёмная "толща воды" — фон, в котором живут пузыри памяти.
         deep: {
           DEFAULT: "#071620",
           panel: "#0E2333",
@@ -17,16 +16,14 @@ const config: Config = {
           dim: "#4F6C78",
         },
         living: {
-          DEFAULT: "#52D8E0", // основной "живой" бирюзовый — центральный пузырь
+          DEFAULT: "#52D8E0",
           soft: "#2E7C88",
           glow: "#8CF0F2",
         },
         gold: {
-          DEFAULT: "#E7B65C", // акцент эволюции/тиров
+          DEFAULT: "#E7B65C",
           soft: "#B98B3B",
         },
-        // Функциональная шкала цвета памяти (см. ТЗ) — намеренно отделена от бренд-палитры,
-        // т.к. это статус, а не украшение.
         memory: {
           none: "#3A4A52",
           blue: "#4FA8E0",
@@ -35,6 +32,12 @@ const config: Config = {
           orange: "#E8954D",
           red: "#E0554F",
           black: "#17181B",
+        },
+        nature: {
+          dark: "#0D2B1A",
+          mid: "#1A5C35",
+          light: "#2D9E5F",
+          glow: "#4FCB84",
         },
       },
       fontFamily: {

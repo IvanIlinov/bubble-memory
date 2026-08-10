@@ -55,31 +55,18 @@ export default function HomePage() {
       const response = await fetch("/api/tasks", {
         headers: { "x-telegram-init-data": initData },
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load tasks: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`Failed: ${response.status}`);
       const data = await response.json();
-
       setUser(data.user);
       const uid = String(data.userId);
       setUserId(uid);
       userIdRef.current = uid;
-
       const serverTasks: ServerTask[] = data.tasks || [];
       setTasks(convertTasks(serverTasks));
       const reps = serverTasks.reduce((sum, t) => sum + (t.repetitions || 0), 0);
-
       setTotalReps(reps);
       totalRepsRef.current = reps;
-
-      setCachedTasks({
-        userId: uid,
-        user: data.user,
-        tasks: serverTasks,
-        timestamp: Date.now(),
-      });
+      setCachedTasks({ userId: uid, user: data.user, tasks: serverTasks, timestamp: Date.now() });
     } catch (error) {
       console.error("Load from server error:", error);
     }
@@ -99,10 +86,8 @@ export default function HomePage() {
           totalRepsRef.current = reps;
           setLoading(false);
         }
-
         const initData = getTelegramInitData();
         const telegramUser = getTelegramUser();
-
         if (initData && telegramUser) {
           await loadFromServer(initData);
         } else if (!cached) {
@@ -120,29 +105,23 @@ export default function HomePage() {
         setLoading(false);
       }
     }
-
     init();
   }, []);
 
   async function handleReview(taskTypeId: string): Promise<void> {
     const uid = userIdRef.current;
     if (!uid) return;
-
     totalRepsRef.current++;
     setTotalReps(totalRepsRef.current);
-
     const cached = getCachedTasks();
     if (cached) {
       setCachedTasks({
         ...cached,
         tasks: cached.tasks.map(t =>
-          t.taskTypeId === taskTypeId
-            ? { ...t, repetitions: t.repetitions + 1 }
-            : t
+          t.taskTypeId === taskTypeId ? { ...t, repetitions: t.repetitions + 1 } : t
         ),
       });
     }
-
     try {
       await fetch("/api/review", {
         method: "POST",
@@ -156,14 +135,17 @@ export default function HomePage() {
 
   if (loading && tasks.length === 0) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-deep">
+      <main className="flex min-h-screen items-center justify-center" style={{ background: "linear-gradient(180deg, #1A5C35 0%, #0D2B1A 100%)" }}>
         <div className="text-foam-muted">Загружаю...</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-deep px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8">
+    <main
+      className="min-h-screen px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8"
+      style={{ background: "linear-gradient(180deg, #2D9E5F 0%, #1A5C35 40%, #0D2B1A 100%)" }}
+    >
       <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
         {tasks.length > 0 ? (
           <section className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 p-6 space-y-4 lg:space-y-8">
@@ -171,7 +153,7 @@ export default function HomePage() {
             <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
           </section>
         ) : (
-          <div className="rounded-2xl bg-deep-panel p-6 text-center text-foam-muted ring-1 ring-white/10">
+          <div className="rounded-2xl bg-white/10 p-6 text-center text-foam-muted ring-1 ring-white/10">
             Пока нет заданий
           </div>
         )}
@@ -180,41 +162,40 @@ export default function HomePage() {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-4 left-0 right-0 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl">
-          <div className="rounded-3xl backdrop-blur-sm bg-white/5 ring-1 ring-white/10 px-6 py-2.5 flex items-center justify-center gap-8">
+          <div className="rounded-full backdrop-blur-md bg-black/30 ring-1 ring-white/10 px-6 py-3 flex items-center justify-center gap-8">
+
             <Link
               href={"/rating" as Route}
-              className="flex flex-col items-center gap-1 py-2 text-foam-muted hover:text-foam transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full text-foam-muted hover:text-foam hover:bg-white/10 transition-all"
               aria-label="Рейтинг"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
               </svg>
-              <span className="text-[10px]">Рейтинг</span>
             </Link>
 
             <Link
               href={"/profile" as Route}
-              className="flex flex-col items-center gap-1 py-2 text-foam-muted hover:text-foam transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full text-foam-muted hover:text-foam hover:bg-white/10 transition-all"
               aria-label="Профиль"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              <span className="text-[10px]">Профиль</span>
             </Link>
 
             <Link
               href={"/journal" as Route}
-              className="flex flex-col items-center gap-1 py-2 text-foam-muted hover:text-foam transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full text-foam-muted hover:text-foam hover:bg-white/10 transition-all"
               aria-label="История"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>
-              <span className="text-[10px]">История</span>
             </Link>
+
           </div>
         </div>
       </nav>
