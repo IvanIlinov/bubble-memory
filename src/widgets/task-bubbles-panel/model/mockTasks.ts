@@ -45,12 +45,13 @@ const TITLES = [
 
 const COLORS: readonly MemoryColor[] = [
   "none",
-  "blue",
+  "emerald",
   "green",
-  "yellow",
+  "lime",
+  "amber",
   "orange",
+  "coral",
   "red",
-  "black",
 ];
 
 export function getMockTaskBubbles(): MockTaskBubble[] {
