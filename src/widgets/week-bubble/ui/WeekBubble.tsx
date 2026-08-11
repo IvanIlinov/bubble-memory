@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 const COLOR_STOPS = [
   { r: 239, g: 68,  b: 68  }, // red
   { r: 247, g: 171, b: 77  }, // orange
@@ -47,12 +45,10 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
   const endColor = interpolateColor(progress);
   const glowRgb = `${endColor.r},${endColor.g},${endColor.b}`;
 
+  // Начало сверху, без rotate на SVG
   const startAngle = -Math.PI / 2;
   const totalAngle = 2 * Math.PI * progress;
-  const activeSegments = Math.round(SEGMENTS * progress);
-
-  const circumference = 2 * Math.PI * 46;
-  const offset = circumference * (1 - progress);
+  const activeSegments = Math.max(1, Math.round(SEGMENTS * progress));
 
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
@@ -73,17 +69,18 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
             backdropFilter: "blur(8px)",
           }}
         >
-          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
+          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
             {/* Фоновая окружность */}
             <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" />
 
-            {/* Цветные сегменты дуги */}
             {progress > 0 && Array.from({ length: activeSegments }, (_, i) => {
-              const t = i / SEGMENTS;
-              const tNext = (i + 1) / SEGMENTS;
-              const color = interpolateColor(t);
-              const segStart = startAngle + 2 * Math.PI * t;
-              const segEnd = startAngle + 2 * Math.PI * Math.min(tNext, progress);
+              const tStart = i / activeSegments;
+              const tEnd = (i + 1) / activeSegments;
+              // цвет идёт от 0 до progress по шкале
+              const color = interpolateColor(tStart * progress);
+              const segStart = startAngle + totalAngle * tStart;
+              const segEnd = startAngle + totalAngle * tEnd;
+              const isLast = i === activeSegments - 1;
               return (
                 <path
                   key={i}
@@ -91,12 +88,12 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
                   fill="none"
                   stroke={toRgb(color)}
                   strokeWidth="4"
-                  strokeLinecap={i === activeSegments - 1 ? "round" : "butt"}
+                  strokeLinecap={isLast ? "round" : "butt"}
                 />
               );
             })}
 
-            {/* Начало дуги — скруглённый cap */}
+            {/* Скруглённый старт */}
             {progress > 0 && (
               <circle
                 cx={50 + 46 * Math.cos(startAngle)}
@@ -105,19 +102,18 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
                 fill={toRgb(interpolateColor(0))}
               />
             )}
-          </svg>
 
-          {/* Свечение конца дуги */}
-          {progress > 0 && (
-            <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90" style={{ filter: `drop-shadow(0 0 4px rgba(${glowRgb},0.9))` }}>
+            {/* Свечение конца */}
+            {progress > 0 && (
               <circle
                 cx={50 + 46 * Math.cos(startAngle + totalAngle)}
                 cy={50 + 46 * Math.sin(startAngle + totalAngle)}
                 r="2.5"
                 fill={toRgb(endColor)}
+                style={{ filter: `drop-shadow(0 0 4px rgba(${glowRgb},0.9))` }}
               />
-            </svg>
-          )}
+            )}
+          </svg>
 
           <div className="flex flex-col items-center justify-center">
             <span className="font-display text-4xl font-semibold text-foam">{totalReps}</span>
