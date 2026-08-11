@@ -6,14 +6,14 @@ import type { MemoryColor } from "@/shared/config/memoryColors";
 import { isPulsing, pulseIntensity } from "@/entities/task-memory/lib/memoryFormula";
 
 const MEMORY_COLOR_HEX: Record<MemoryColor, string> = {
-  none:    "#2A2E2F",
-  emerald: "#3DDCC4",
-  green:   "#4ADE80",
-  lime:    "#A3E635",
-  amber:   "#FFD166",
-  orange:  "#FB923C",
-  coral:   "#F87171",
-  red:     "#EF4444",
+  none: "#2A2E2F",
+  green: "#4ADE80",
+  mint: "#3DDCC4",
+  lime: "#A3E635",
+  amber: "#FFD166",
+  orange: "#FB923C",
+  coral: "#F87171",
+  red: "#EF4444",
 };
 
 export interface BubbleProps {
@@ -82,16 +82,16 @@ export function Bubble({
 
   const boxShadow = isNone
     ? [
-        "0 0 0 1px rgba(255,255,255,0.09)",
-        "inset 0 1px 0 rgba(255,255,255,0.10)",
-        "0 4px 12px -4px rgba(0,0,0,0.55)",
-      ].join(", ")
+      "0 0 0 1px rgba(255,255,255,0.09)",
+      "inset 0 1px 0 rgba(255,255,255,0.10)",
+      "0 4px 12px -4px rgba(0,0,0,0.55)",
+    ].join(", ")
     : [
-        `0 0 0 1px ${hex}55`,
-        `inset 0 1px 0 rgba(255,255,255,0.22)`,
-        `0 0 ${pulsing ? 20 : 14}px -4px ${hex}${pulsing ? "cc" : "99"}`,
-        `0 4px 12px -4px rgba(0,0,0,0.4)`,
-      ].join(", ");
+      `0 0 0 1px ${hex}55`,
+      `inset 0 1px 0 rgba(255,255,255,0.22)`,
+      `0 0 ${pulsing ? 20 : 14}px -4px ${hex}${pulsing ? "cc" : "99"}`,
+      `0 4px 12px -4px rgba(0,0,0,0.4)`,
+    ].join(", ");
 
   const pulseKeyframes = pulsing
     ? `@keyframes bubble-pulse-${number} { 0%, 100% { transform: scale(1); } 50% { transform: scale(${pulseScale}); } }`

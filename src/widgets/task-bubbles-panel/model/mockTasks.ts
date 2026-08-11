@@ -45,8 +45,8 @@ const TITLES = [
 
 const COLORS: readonly MemoryColor[] = [
   "none",
-  "emerald",
   "green",
+  "mint",
   "lime",
   "amber",
   "orange",

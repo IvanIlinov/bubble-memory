@@ -1,7 +1,7 @@
 export type MemoryColor =
   | "none"
-  | "emerald"
   | "green"
+  | "mint"
   | "lime"
   | "amber"
   | "orange"
