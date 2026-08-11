@@ -31,7 +31,7 @@ export default function ProfilePage() {
     async function fetchProfile() {
       try {
         const initData = window.Telegram?.WebApp?.initData || "";
-        setDebug(`initData length: ${initData.length}`);
+        setDebug(`initData:\n${initData.substring(0, 300)}\n\n...`);
         
         const response = await fetch("/api/profile", {
           headers: {
@@ -39,9 +39,9 @@ export default function ProfilePage() {
           },
         });
 
-        setDebug(prev => prev + `\nResponse status: ${response.status}`);
+        setDebug(prev => prev + `\n\nResponse status: ${response.status}`);
         const responseData = await response.json();
-        setDebug(prev => prev + `\nResponse: ${JSON.stringify(responseData).substring(0, 200)}`);
+        setDebug(prev => prev + `\n\nResponse: ${JSON.stringify(responseData).substring(0, 300)}`);
 
         if (!response.ok) {
           throw new Error(responseData.error || `HTTP ${response.status}`);
@@ -50,7 +50,7 @@ export default function ProfilePage() {
         setData(responseData);
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        setDebug(prev => prev + `\nError: ${errMsg}`);
+        setDebug(prev => prev + `\n\nError: ${errMsg}`);
         setError(errMsg);
       } finally {
         setLoading(false);
@@ -80,7 +80,7 @@ export default function ProfilePage() {
           >
             <div className="text-coral font-semibold">❌ Ошибка загрузки</div>
             <div className="text-foam text-sm">{error}</div>
-            <div className="bg-black/20 rounded-lg p-3 text-foam-muted text-xs font-mono whitespace-pre-wrap break-words">
+            <div className="bg-black/20 rounded-lg p-3 text-foam-muted text-xs font-mono whitespace-pre-wrap break-words overflow-auto max-h-96">
               {debug}
             </div>
             <button 
