@@ -9,7 +9,7 @@ const MEMORY_COLOR_HEX: Record<MemoryColor, string> = {
   none: "#2A2E2F",
   green: "#4ADE80",
   mint: "#86EFAC",
-  lime: "#BEF264",
+  lime: "#9CF7A8",
   amber: "#FFD166",
   orange: "#FB923C",
   coral: "#F87171",
