@@ -47,7 +47,7 @@ const NAV_LINKS = [
     href: "/rating",
     label: "Рейтинг",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
       </svg>
     ),
@@ -56,7 +56,7 @@ const NAV_LINKS = [
     href: "/profile",
     label: "Профиль",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />
       </svg>
@@ -66,7 +66,7 @@ const NAV_LINKS = [
     href: "/journal",
     label: "История",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
       </svg>
@@ -83,9 +83,9 @@ function BottomNav() {
         <div
           className="rounded-full px-4 py-2 flex items-center justify-center gap-2"
           style={{
-            background: "linear-gradient(160deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)",
-            boxShadow: "0 0 0 1px rgba(255,255,255,0.1), 0 16px 40px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12)",
-            backdropFilter: "blur(24px)",
+            background: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%)",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 16px 32px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)",
+            backdropFilter: "blur(20px)",
           }}
         >
           {NAV_LINKS.map(({ href, label, icon }) => {
@@ -97,14 +97,13 @@ function BottomNav() {
                 aria-label={label}
                 className="flex flex-col items-center gap-1 px-5 py-2 rounded-full transition-all duration-200"
                 style={isActive ? {
-                  background: "linear-gradient(135deg, rgba(254,154,52,0.22) 0%, rgba(255,84,76,0.18) 100%)",
-                  border: "1px solid rgba(254,154,52,0.85)",
-                  boxShadow: "0 0 0 1px rgba(254,154,52,0.4), 0 0 22px -3px rgba(254,154,52,0.7)",
-                  color: "#FFC978",
+                  background: "rgba(61,220,196,0.1)",
+                  border: "1px solid rgba(61,220,196,0.5)",
+                  boxShadow: "0 0 16px -4px rgba(61,220,196,0.5)",
+                  color: "#3DDCC4",
                 } : {
-                  color: "rgba(255,255,255,0.75)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: "0 0 12px -4px rgba(42,176,163,0.3)",
+                  color: "rgba(255,255,255,0.45)",
+                  border: "1px solid transparent",
                 }}
               >
                 {icon}
@@ -211,10 +210,7 @@ export default function HomePage() {
 
   if (loading && tasks.length === 0) {
     return (
-      <main
-        className="flex min-h-screen items-center justify-center"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, #0F4A40 0%, #04211D 70%)" }}
-      >
+      <main className="flex min-h-screen items-center justify-center bg-deep">
         <div className="text-foam-muted">Загружаю...</div>
       </main>
     );
@@ -222,42 +218,25 @@ export default function HomePage() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8"
-      style={{
-        background:
-          "radial-gradient(ellipse at 50% -10%, #12594C 0%, #0A3A32 40%, #04211D 100%)",
-      }}
+      className="relative min-h-screen px-4 py-2 pb-24 text-foam sm:px-6 lg:px-8"
+      style={{ background: "radial-gradient(ellipse at 50% -10%, #191D1E 0%, #0D0F0F 55%)" }}
     >
-      {/* Живые цветовые пятна — воодушевление */}
-      <div
-        className="pointer-events-none fixed -top-10 -left-16 w-72 h-72 opacity-30 blur-3xl rounded-full animate-drift"
-        style={{ background: "radial-gradient(circle, #FF544C 0%, transparent 70%)" }}
-      />
-      <div
-        className="pointer-events-none fixed top-10 right-[-4rem] w-80 h-80 opacity-25 blur-3xl rounded-full animate-drift"
-        style={{ background: "radial-gradient(circle, #FFE458 0%, transparent 70%)", animationDelay: "3s" }}
-      />
-      <div
-        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 opacity-25 blur-3xl rounded-full"
-        style={{ background: "radial-gradient(circle, #2AB0A3 0%, transparent 70%)" }}
-      />
-
       <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl relative">
         {tasks.length > 0 ? (
           <section
             className="rounded-3xl p-6 space-y-4 lg:space-y-8"
             style={{
-              background: "linear-gradient(160deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)",
+              background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)",
               boxShadow:
-                "0 0 0 1px rgba(255,255,255,0.12), 0 32px 64px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 60px rgba(254,154,52,0.04)",
-              backdropFilter: "blur(22px)",
+                "0 0 0 1px rgba(255,255,255,0.08), 0 24px 48px -16px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.05)",
+              backdropFilter: "blur(20px)",
             }}
           >
             <WeekBubble totalReps={totalReps} />
             <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
           </section>
         ) : (
-          <div className="rounded-2xl p-6 text-center text-foam-muted" style={{ background: "rgba(255,255,255,0.05)" }}>
+          <div className="rounded-2xl p-6 text-center text-foam-muted" style={{ background: "rgba(255,255,255,0.04)" }}>
             Пока нет заданий
           </div>
         )}
