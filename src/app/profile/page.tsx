@@ -25,24 +25,33 @@ export default function ProfilePage() {
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debug, setDebug] = useState<string>("");
 
   useEffect(() => {
     async function fetchProfile() {
       try {
+        const initData = window.Telegram?.WebApp?.initData || "";
+        setDebug(`initData length: ${initData.length}`);
+        
         const response = await fetch("/api/profile", {
           headers: {
-            "x-telegram-init-data": window.Telegram?.WebApp?.initData || "",
+            "x-telegram-init-data": initData,
           },
         });
 
+        setDebug(prev => prev + `\nResponse status: ${response.status}`);
+        const responseData = await response.json();
+        setDebug(prev => prev + `\nResponse: ${JSON.stringify(responseData).substring(0, 200)}`);
+
         if (!response.ok) {
-          throw new Error("Failed to load profile");
+          throw new Error(responseData.error || `HTTP ${response.status}`);
         }
 
-        const profileData = await response.json();
-        setData(profileData);
+        setData(responseData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        const errMsg = err instanceof Error ? err.message : String(err);
+        setDebug(prev => prev + `\nError: ${errMsg}`);
+        setError(errMsg);
       } finally {
         setLoading(false);
       }
@@ -61,8 +70,27 @@ export default function ProfilePage() {
 
   if (error || !data) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-coral">{error || "Ошибка загрузки"}</div>
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="rounded-3xl backdrop-blur-20 p-6 space-y-4"
+            style={{
+              background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)",
+              boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 24px 48px -16px rgba(0,0,0,0.65)",
+            }}
+          >
+            <div className="text-coral font-semibold">❌ Ошибка загрузки</div>
+            <div className="text-foam text-sm">{error}</div>
+            <div className="bg-black/20 rounded-lg p-3 text-foam-muted text-xs font-mono whitespace-pre-wrap break-words">
+              {debug}
+            </div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full mt-4 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-foam text-sm"
+            >
+              Попробовать ещё
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
