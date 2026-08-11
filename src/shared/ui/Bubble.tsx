@@ -68,10 +68,7 @@ export function Bubble({
     onReview?.();
   }
 
-  function triggerHaptic() {
-    const tg = (globalThis as any)?.Telegram?.WebApp;
-    tg?.HapticFeedback?.impactOccurred?.(alreadyReviewedToday ? "light" : "medium");
-  }
+  function triggerHaptic() { }
 
   const hex = MEMORY_COLOR_HEX[color];
   const isNone = color === "none";
