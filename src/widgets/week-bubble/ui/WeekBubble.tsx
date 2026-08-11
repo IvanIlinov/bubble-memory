@@ -29,38 +29,30 @@ function toRgb({ r, g, b }: { r: number; g: number; b: number }) {
   return `rgb(${r},${g},${b})`;
 }
 
-// Точка на окружности по углу (в радианах), r=46, центр 50,50
-function pointOnCircle(angle: number) {
-  return {
-    x: 50 + 46 * Math.cos(angle),
-    y: 50 + 46 * Math.sin(angle),
-  };
+function arcPath(startAngle: number, endAngle: number, r = 46, cx = 50, cy = 50) {
+  const x1 = cx + r * Math.cos(startAngle);
+  const y1 = cy + r * Math.sin(startAngle);
+  const x2 = cx + r * Math.cos(endAngle);
+  const y2 = cy + r * Math.sin(endAngle);
+  const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
 }
+
+const SEGMENTS = 60;
 
 export function WeekBubble({ totalReps }: { totalReps: number }) {
   const target = 27;
   const progress = Math.min(totalReps / target, 1);
-  const circumference = 2 * Math.PI * 46;
-  const offset = circumference * (1 - progress);
 
   const endColor = interpolateColor(progress);
   const glowRgb = `${endColor.r},${endColor.g},${endColor.b}`;
 
-  // Дуга начинается сверху (-90°) и идёт по часовой
-  // Градиент: от точки старта до точки конца дуги
   const startAngle = -Math.PI / 2;
-  const endAngle = startAngle + 2 * Math.PI * progress;
+  const totalAngle = 2 * Math.PI * progress;
+  const activeSegments = Math.round(SEGMENTS * progress);
 
-  const startPt = pointOnCircle(startAngle);
-  const endPt = pointOnCircle(endAngle);
-
-  // Генерируем промежуточные стопы по длине дуги
-  const stopCount = 6;
-  const gradientStops = Array.from({ length: stopCount }, (_, i) => {
-    const t = i / (stopCount - 1);
-    const color = interpolateColor(t * progress);
-    return { offset: `${Math.round(t * 100)}%`, color: toRgb(color) };
-  });
+  const circumference = 2 * Math.PI * 46;
+  const offset = circumference * (1 - progress);
 
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
@@ -82,34 +74,51 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
           }}
         >
           <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
-            <defs>
-              <linearGradient
-                id="ringGradient"
-                gradientUnits="userSpaceOnUse"
-                x1={startPt.x}
-                y1={startPt.y}
-                x2={endPt.x}
-                y2={endPt.y}
-              >
-                {gradientStops.map((s, i) => (
-                  <stop key={i} offset={s.offset} stopColor={s.color} />
-                ))}
-              </linearGradient>
-            </defs>
+            {/* Фоновая окружность */}
             <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" />
-            <motion.circle
-              cx="50" cy="50" r="46"
-              fill="none"
-              stroke="url(#ringGradient)"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              initial={false}
-              animate={{ strokeDashoffset: offset }}
-              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0] }}
-              style={{ filter: `drop-shadow(0 0 6px rgba(${glowRgb},0.7))` }}
-            />
+
+            {/* Цветные сегменты дуги */}
+            {progress > 0 && Array.from({ length: activeSegments }, (_, i) => {
+              const t = i / SEGMENTS;
+              const tNext = (i + 1) / SEGMENTS;
+              const color = interpolateColor(t);
+              const segStart = startAngle + 2 * Math.PI * t;
+              const segEnd = startAngle + 2 * Math.PI * Math.min(tNext, progress);
+              return (
+                <path
+                  key={i}
+                  d={arcPath(segStart, segEnd)}
+                  fill="none"
+                  stroke={toRgb(color)}
+                  strokeWidth="4"
+                  strokeLinecap={i === activeSegments - 1 ? "round" : "butt"}
+                />
+              );
+            })}
+
+            {/* Начало дуги — скруглённый cap */}
+            {progress > 0 && (
+              <circle
+                cx={50 + 46 * Math.cos(startAngle)}
+                cy={50 + 46 * Math.sin(startAngle)}
+                r="2"
+                fill={toRgb(interpolateColor(0))}
+              />
+            )}
           </svg>
+
+          {/* Свечение конца дуги */}
+          {progress > 0 && (
+            <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90" style={{ filter: `drop-shadow(0 0 4px rgba(${glowRgb},0.9))` }}>
+              <circle
+                cx={50 + 46 * Math.cos(startAngle + totalAngle)}
+                cy={50 + 46 * Math.sin(startAngle + totalAngle)}
+                r="2.5"
+                fill={toRgb(endColor)}
+              />
+            </svg>
+          )}
+
           <div className="flex flex-col items-center justify-center">
             <span className="font-display text-4xl font-semibold text-foam">{totalReps}</span>
             <span className="mt-1 text-[11px] uppercase tracking-wide text-foam-muted">повторений</span>
