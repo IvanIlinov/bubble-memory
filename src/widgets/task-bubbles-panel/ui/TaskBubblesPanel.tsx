@@ -14,7 +14,7 @@ export function TaskBubblesPanel({
   const tasksToShow = tasks ?? getMockTaskBubbles();
 
   return (
-    <section aria-label="Задания ЕГЭ" className="grid grid-cols-6 gap-2.5 sm:grid-cols-7 lg:grid-cols-9">
+    <section aria-label="Задания ЕГЭ" className="grid grid-cols-6 gap-2.5 sm:grid-cols-7 lg:grid-cols-9 pt-2">
       {tasksToShow.map((task) => (
         <Bubble
           key={task.taskTypeId}

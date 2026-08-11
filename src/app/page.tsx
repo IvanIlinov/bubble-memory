@@ -102,7 +102,7 @@ function BottomNav() {
                   boxShadow: "0 0 16px -4px rgba(61,220,196,0.5)",
                   color: "#3DDCC4",
                 } : {
-                  color: "rgba(255,255,255,0.45)",
+                  color: "rgba(61,220,196,0.55)",
                   border: "1px solid transparent",
                 }}
               >
@@ -228,7 +228,7 @@ export default function HomePage() {
             style={{
               background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)",
               boxShadow:
-                "0 0 0 1px rgba(255,255,255,0.08), 0 24px 48px -16px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.05)",
+                "0 0 0 1px rgba(255,255,255,0.08), 0 24px 48px -16px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px -4px rgba(61,220,196,0.08)",
               backdropFilter: "blur(20px)",
             }}
           >
