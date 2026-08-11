@@ -1,12 +1,14 @@
 "use client";
 
+import { motion } from "framer-motion";
+
 const COLOR_STOPS = [
-  { r: 239, g: 68,  b: 68  }, // red
-  { r: 247, g: 171, b: 77  }, // orange
-  { r: 246, g: 247, b: 156 }, // amber
-  { r: 205, g: 238, b: 106 }, // lime
-  { r: 134, g: 239, b: 172 }, // mint
-  { r: 74,  g: 222, b: 128 }, // green
+  { r: 239, g: 68,  b: 68  },
+  { r: 247, g: 171, b: 77  },
+  { r: 246, g: 247, b: 156 },
+  { r: 205, g: 238, b: 106 },
+  { r: 134, g: 239, b: 172 },
+  { r: 74,  g: 222, b: 128 },
 ];
 
 function interpolateColor(t: number) {
@@ -27,28 +29,15 @@ function toRgb({ r, g, b }: { r: number; g: number; b: number }) {
   return `rgb(${r},${g},${b})`;
 }
 
-function arcPath(startAngle: number, endAngle: number, r = 46, cx = 50, cy = 50) {
-  const x1 = cx + r * Math.cos(startAngle);
-  const y1 = cy + r * Math.sin(startAngle);
-  const x2 = cx + r * Math.cos(endAngle);
-  const y2 = cy + r * Math.sin(endAngle);
-  const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
-}
-
-const SEGMENTS = 60;
-
 export function WeekBubble({ totalReps }: { totalReps: number }) {
   const target = 27;
   const progress = Math.min(totalReps / target, 1);
+  const circumference = 2 * Math.PI * 46;
+  const offset = circumference * (1 - progress);
 
+  const startColor = toRgb(COLOR_STOPS[0]!);
   const endColor = interpolateColor(progress);
   const glowRgb = `${endColor.r},${endColor.g},${endColor.b}`;
-
-  // Начало сверху, без rotate на SVG
-  const startAngle = -Math.PI / 2;
-  const totalAngle = 2 * Math.PI * progress;
-  const activeSegments = Math.max(1, Math.round(SEGMENTS * progress));
 
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
@@ -69,50 +58,31 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
             backdropFilter: "blur(8px)",
           }}
         >
-          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
-            {/* Фоновая окружность */}
-            <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" />
-
-            {progress > 0 && Array.from({ length: activeSegments }, (_, i) => {
-              const tStart = i / activeSegments;
-              const tEnd = (i + 1) / activeSegments;
-              // цвет идёт от 0 до progress по шкале
-              const color = interpolateColor(tStart * progress);
-              const segStart = startAngle + totalAngle * tStart;
-              const segEnd = startAngle + totalAngle * tEnd;
-              const isLast = i === activeSegments - 1;
-              return (
-                <path
-                  key={i}
-                  d={arcPath(segStart, segEnd)}
-                  fill="none"
-                  stroke={toRgb(color)}
-                  strokeWidth="4"
-                  strokeLinecap={isLast ? "round" : "butt"}
-                />
-              );
-            })}
-
-            {/* Скруглённый старт */}
-            {progress > 0 && (
-              <circle
-                cx={50 + 46 * Math.cos(startAngle)}
-                cy={50 + 46 * Math.sin(startAngle)}
-                r="2"
-                fill={toRgb(interpolateColor(0))}
-              />
-            )}
-
-            {/* Свечение конца */}
-            {progress > 0 && (
-              <circle
-                cx={50 + 46 * Math.cos(startAngle + totalAngle)}
-                cy={50 + 46 * Math.sin(startAngle + totalAngle)}
-                r="2.5"
-                fill={toRgb(endColor)}
-                style={{ filter: `drop-shadow(0 0 4px rgba(${glowRgb},0.9))` }}
-              />
-            )}
+          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
+            <defs>
+              <linearGradient id="ringGradient" x1="1" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={startColor} />
+                <stop offset="100%" stopColor={toRgb(endColor)} />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="50" cy="50" r="46"
+              fill="none"
+              stroke="rgba(255,255,255,0.07)"
+              strokeWidth="4"
+            />
+            <motion.circle
+              cx="50" cy="50" r="46"
+              fill="none"
+              stroke="url(#ringGradient)"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              initial={false}
+              animate={{ strokeDashoffset: offset }}
+              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0] }}
+              style={{ filter: `drop-shadow(0 0 5px rgba(${glowRgb},0.7))` }}
+            />
           </svg>
 
           <div className="flex flex-col items-center justify-center">
