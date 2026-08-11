@@ -39,7 +39,7 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
               strokeDasharray={circumference}
               initial={false}
               animate={{ strokeDashoffset: offset }}
-              transition={{ type: "spring", stiffness: 60, damping: 18 }}
+              transition={{ duration: 0.6, ease: [0.34, 1.0, 0.64, 1.0] }}
               style={{ filter: "drop-shadow(0 0 6px rgba(61,220,196,0.6))" }}
             />
             <defs>
