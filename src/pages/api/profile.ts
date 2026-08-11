@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const telegramUser = getTelegramUser(initData);
-    if (!telegramUser) {
+    const telegramUser = getTelegramUser();
+    if (!telegramUser?.id) {
       return NextResponse.json(
         { error: "Invalid auth" },
         { status: 401 }
