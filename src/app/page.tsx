@@ -47,8 +47,14 @@ const NAV_LINKS = [
     href: "/rating",
     label: "Рейтинг",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2L15.09 8.26H21.77L17.38 12.46L19.47 18.74L12 14.54L4.53 18.74L6.62 12.46L2.23 8.26H8.91L12 2Z" />
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id="nav-grad-rating" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3DDCC4" />
+            <stop offset="100%" stopColor="#9E8CFF" />
+          </linearGradient>
+        </defs>
+        <polygon fill="url(#nav-grad-rating)" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
       </svg>
     ),
   },
@@ -56,9 +62,15 @@ const NAV_LINKS = [
     href: "/profile",
     label: "Профиль",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id="nav-grad-profile" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3DDCC4" />
+            <stop offset="100%" stopColor="#9E8CFF" />
+          </linearGradient>
+        </defs>
+        <circle fill="url(#nav-grad-profile)" cx="12" cy="8" r="4" />
+        <path fill="url(#nav-grad-profile)" d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
       </svg>
     ),
   },
@@ -66,9 +78,17 @@ const NAV_LINKS = [
     href: "/journal",
     label: "История",
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id="nav-grad-journal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3DDCC4" />
+            <stop offset="100%" stopColor="#9E8CFF" />
+          </linearGradient>
+        </defs>
+        <rect fill="url(#nav-grad-journal)" x="4" y="3" width="16" height="18" rx="2" />
+        <rect fill="#0D0F0F" x="7" y="7.5" width="10" height="1.5" rx="0.75" />
+        <rect fill="#0D0F0F" x="7" y="11" width="10" height="1.5" rx="0.75" />
+        <rect fill="#0D0F0F" x="7" y="14.5" width="6" height="1.5" rx="0.75" />
       </svg>
     ),
   },
@@ -98,11 +118,10 @@ function BottomNav() {
                 className="flex flex-col items-center gap-1 px-5 py-2 rounded-full transition-all duration-200"
                 style={isActive ? {
                   background: "rgba(61,220,196,0.1)",
-                  border: "1px solid rgba(61,220,196,0.5)",
+                  border: "1px solid rgba(61,220,196,0.4)",
                   boxShadow: "0 0 16px -4px rgba(61,220,196,0.5)",
-                  color: "#3DDCC4",
                 } : {
-                  color: "rgba(61,220,196,0.55)",
+                  opacity: 0.4,
                   border: "1px solid transparent",
                 }}
               >

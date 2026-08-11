@@ -5,24 +5,14 @@ import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/cn";
 import type { MemoryColor } from "@/shared/config/memoryColors";
 
-const MEMORY_COLOR_CLASS: Record<MemoryColor, string> = {
-  none: "bg-memory-none",
-  blue: "bg-memory-blue",
-  green: "bg-memory-green",
-  yellow: "bg-memory-yellow",
-  orange: "bg-memory-orange",
-  red: "bg-memory-red",
-  black: "bg-memory-black",
-};
-
-const MEMORY_COLOR_GLOW: Record<MemoryColor, string> = {
-  none: "shadow-[0_0_0_1px_rgba(255,255,255,0.06)]",
-  blue: "shadow-[0_0_14px_-4px_rgba(79,195,247,0.7)]",
-  green: "shadow-[0_0_14px_-4px_rgba(61,220,196,0.7)]",
-  yellow: "shadow-[0_0_14px_-4px_rgba(255,209,102,0.7)]",
-  orange: "shadow-[0_0_14px_-4px_rgba(255,163,92,0.7)]",
-  red: "shadow-[0_0_14px_-4px_rgba(255,107,107,0.75)]",
-  black: "shadow-[0_0_0_1px_rgba(255,255,255,0.04)]",
+const MEMORY_COLOR_HEX: Record<MemoryColor, string> = {
+  none: "#2A2E2F",
+  blue: "#4FC3F7",
+  green: "#3DDCC4",
+  yellow: "#FFD166",
+  orange: "#FFA35C",
+  red: "#FF6B6B",
+  black: "#101314",
 };
 
 export interface BubbleProps {
@@ -61,11 +51,7 @@ export function Bubble({
   function handleTap() {
     if (tapProcessed.current) return;
     tapProcessed.current = true;
-
-    if (showStatus) {
-      setShowStatus(false);
-      return;
-    }
+    if (showStatus) { setShowStatus(false); return; }
     triggerHaptic();
     onReview?.();
   }
@@ -75,6 +61,8 @@ export function Bubble({
     tg?.HapticFeedback?.impactOccurred?.(alreadyReviewedToday ? "light" : "medium");
   }
 
+  const hex = MEMORY_COLOR_HEX[color];
+  const isNone = color === "none";
   const dimension = size === "sm" ? "h-10 w-10 text-xs" : "h-12 w-12 text-sm";
 
   return (
@@ -84,23 +72,34 @@ export function Bubble({
         aria-label={`Задание ${number}. ${statusText}`}
         onPointerDown={handlePressStart}
         onPointerUp={() => { handlePressEnd(); handleTap(); }}
-        onPointerLeave={() => {
-          handlePressEnd();
-          setShowStatus(false);
-        }}
+        onPointerLeave={() => { handlePressEnd(); setShowStatus(false); }}
         onTouchEnd={() => { handlePressEnd(); handleTap(); }}
         whileTap={{ scale: 0.9 }}
         animate={alreadyReviewedToday ? { scale: [1, 1.08, 1] } : undefined}
         transition={{ type: "spring", stiffness: 300, damping: 16 }}
         className={cn(
-          "relative flex items-center justify-center rounded-full font-body font-medium text-deep",
-          "ring-1 ring-white/10 transition-colors",
+          "relative flex items-center justify-center rounded-full font-body font-medium",
+          "transition-colors select-none",
           dimension,
-          MEMORY_COLOR_CLASS[color],
-          MEMORY_COLOR_GLOW[color],
-          color === "none" && "text-foam-muted",
-          color === "black" && "text-foam",
         )}
+        style={{
+          background: isNone
+            ? "linear-gradient(160deg, #333739 0%, #232728 100%)"
+            : `linear-gradient(160deg, ${hex}cc 0%, ${hex}88 100%)`,
+          boxShadow: isNone
+            ? [
+              "0 0 0 1px rgba(255,255,255,0.09)",
+              "inset 0 1px 0 rgba(255,255,255,0.10)",
+              "0 4px 12px -4px rgba(0,0,0,0.55)",
+            ].join(", ")
+            : [
+              `0 0 0 1px ${hex}55`,
+              `inset 0 1px 0 rgba(255,255,255,0.22)`,
+              `0 0 14px -4px ${hex}99`,
+              `0 4px 12px -4px rgba(0,0,0,0.4)`,
+            ].join(", "),
+          color: isNone ? "rgba(255,255,255,0.35)" : "#0D0F0F",
+        }}
       >
         {number}
       </motion.button>
@@ -108,7 +107,8 @@ export function Bubble({
       {showStatus && (
         <div
           role="status"
-          className="absolute -top-9 z-10 whitespace-nowrap rounded-md bg-deep-panel2 px-2 py-1 text-[11px] text-foam shadow-lg ring-1 ring-white/10"
+          className="absolute -top-9 z-10 whitespace-nowrap rounded-md px-2 py-1 text-[11px] text-foam shadow-lg ring-1 ring-white/10"
+          style={{ background: "#1C2020" }}
         >
           {statusText}
         </div>
