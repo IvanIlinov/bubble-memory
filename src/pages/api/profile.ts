@@ -4,25 +4,51 @@ import { prisma } from "@/shared/lib/prisma";
 export async function GET(req: NextRequest) {
   try {
     const initData = req.headers.get("x-telegram-init-data");
+    console.log("1. initData received:", initData?.substring(0, 50) + "...");
+    
     if (!initData) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Unauthorized - no initData" },
         { status: 401 }
       );
     }
 
-    const params = new URLSearchParams(initData);
+    console.log("2. Attempting to parse URLSearchParams...");
+    let params;
+    try {
+      params = new URLSearchParams(initData);
+    } catch (parseError) {
+      console.error("URLSearchParams parse error:", parseError);
+      return NextResponse.json(
+        { error: `Parse error: ${parseError instanceof Error ? parseError.message : "unknown"}` },
+        { status: 400 }
+      );
+    }
+
     const userStr = params.get("user");
+    console.log("3. userStr:", userStr?.substring(0, 50) + "...");
 
     if (!userStr) {
       return NextResponse.json(
-        { error: "Invalid auth" },
+        { error: "Invalid auth - no user in initData" },
         { status: 401 }
       );
     }
 
-    const telegramUser = JSON.parse(userStr);
+    console.log("4. Attempting to parse user JSON...");
+    let telegramUser;
+    try {
+      telegramUser = JSON.parse(userStr);
+    } catch (jsonError) {
+      console.error("JSON parse error:", jsonError);
+      return NextResponse.json(
+        { error: `JSON parse error: ${jsonError instanceof Error ? jsonError.message : "unknown"}` },
+        { status: 400 }
+      );
+    }
+
     const telegramId = String(telegramUser.id);
+    console.log("5. telegramId:", telegramId);
 
     const user = await prisma.user.findUnique({
       where: { telegramId },
@@ -102,7 +128,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Profile API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: `Internal error: ${error instanceof Error ? error.message : "unknown"}` },
       { status: 500 }
     );
   }
