@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/shared/lib/prisma";
-import { getTelegramUser } from "@/shared/lib/telegram";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,16 +11,21 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const telegramUser = getTelegramUser();
-    if (!telegramUser?.id) {
+    const params = new URLSearchParams(initData);
+    const userStr = params.get("user");
+
+    if (!userStr) {
       return NextResponse.json(
         { error: "Invalid auth" },
         { status: 401 }
       );
     }
 
+    const telegramUser = JSON.parse(userStr);
+    const telegramId = String(telegramUser.id);
+
     const user = await prisma.user.findUnique({
-      where: { telegramId: telegramUser.id.toString() },
+      where: { telegramId },
     });
 
     if (!user) {
