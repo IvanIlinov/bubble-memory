@@ -6,7 +6,7 @@ const COLOR_STOPS = [
   { r: 239, g: 68,  b: 68  }, // red
   { r: 247, g: 171, b: 77  }, // orange
   { r: 246, g: 247, b: 156 }, // amber
-  { r: 156, g: 247, b: 168 }, // lime
+  { r: 205, g: 238, b: 106 }, // lime
   { r: 134, g: 239, b: 172 }, // mint
   { r: 74,  g: 222, b: 128 }, // green
 ];
@@ -29,16 +29,38 @@ function toRgb({ r, g, b }: { r: number; g: number; b: number }) {
   return `rgb(${r},${g},${b})`;
 }
 
+// Точка на окружности по углу (в радианах), r=46, центр 50,50
+function pointOnCircle(angle: number) {
+  return {
+    x: 50 + 46 * Math.cos(angle),
+    y: 50 + 46 * Math.sin(angle),
+  };
+}
+
 export function WeekBubble({ totalReps }: { totalReps: number }) {
   const target = 27;
   const progress = Math.min(totalReps / target, 1);
   const circumference = 2 * Math.PI * 46;
   const offset = circumference * (1 - progress);
 
-  // Начало дуги всегда красное, конец — цвет текущего прогресса
-  const startColor = interpolateColor(0);
   const endColor = interpolateColor(progress);
   const glowRgb = `${endColor.r},${endColor.g},${endColor.b}`;
+
+  // Дуга начинается сверху (-90°) и идёт по часовой
+  // Градиент: от точки старта до точки конца дуги
+  const startAngle = -Math.PI / 2;
+  const endAngle = startAngle + 2 * Math.PI * progress;
+
+  const startPt = pointOnCircle(startAngle);
+  const endPt = pointOnCircle(endAngle);
+
+  // Генерируем промежуточные стопы по длине дуги
+  const stopCount = 6;
+  const gradientStops = Array.from({ length: stopCount }, (_, i) => {
+    const t = i / (stopCount - 1);
+    const color = interpolateColor(t * progress);
+    return { offset: `${Math.round(t * 100)}%`, color: toRgb(color) };
+  });
 
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
@@ -61,9 +83,17 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
         >
           <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
             <defs>
-              <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={toRgb(startColor)} />
-                <stop offset="100%" stopColor={toRgb(endColor)} />
+              <linearGradient
+                id="ringGradient"
+                gradientUnits="userSpaceOnUse"
+                x1={startPt.x}
+                y1={startPt.y}
+                x2={endPt.x}
+                y2={endPt.y}
+              >
+                {gradientStops.map((s, i) => (
+                  <stop key={i} offset={s.offset} stopColor={s.color} />
+                ))}
               </linearGradient>
             </defs>
             <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" />
