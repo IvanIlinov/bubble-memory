@@ -1,4 +1,4 @@
-const CACHE_KEY = "bubble-memory-tasks";
+const CACHE_KEY = "bubble-memory-tasks-v2";
 const CACHE_EXPIRY = 60 * 60 * 1000; // 1 час
 
 export interface CachedData {
@@ -18,7 +18,6 @@ export function getCachedTasks(): CachedData | null {
     const data: CachedData = JSON.parse(cached);
     const age = Date.now() - data.timestamp;
 
-    // Кеш валиден если меньше часа
     if (age < CACHE_EXPIRY) {
       return data;
     }
