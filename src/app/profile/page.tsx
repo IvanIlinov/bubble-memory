@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ProfileCircle } from "@/widgets/profile-circle/ui/ProfileCircle";
 import { ProgressBar } from "@/shared/ui/ProgressBar";
 
@@ -22,6 +23,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +135,18 @@ export default function ProfilePage() {
             <span className="text-sm">⏱️</span>
             <span className="text-sm font-medium text-foam">{stats.lifetimeDays} дня</span>
           </div>
+        </div>
+
+        <div className="flex justify-center pt-4">
+          <button
+            onClick={() => router.push("/")}
+            className="p-3 rounded-full bg-white/5 hover:bg-white/10 ring-1 ring-white/10 hover:ring-white/20 transition-all"
+            aria-label="Вернуться на главную"
+          >
+            <svg className="w-6 h-6 text-foam" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         <div className="h-20" />
