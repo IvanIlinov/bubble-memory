@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ProfileCircle } from "@/widgets/profile-circle/ui/ProfileCircle";
-import { ProgressBar, ProgressStat } from "@/shared/ui/ProgressBar";
+import { ProgressBar } from "@/shared/ui/ProgressBar";
 
 interface ProfileData {
   user: {
@@ -25,13 +25,11 @@ export default function ProfilePage() {
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [debug, setDebug] = useState<string>("");
 
   useEffect(() => {
     async function fetchProfile() {
       try {
         const initData = window.Telegram?.WebApp?.initData || "";
-        setDebug(`initData:\n${initData.substring(0, 300)}\n\n...`);
         
         const response = await fetch("/api/profile", {
           headers: {
@@ -39,18 +37,15 @@ export default function ProfilePage() {
           },
         });
 
-        setDebug(prev => prev + `\n\nResponse status: ${response.status}`);
-        const responseData = await response.json();
-        setDebug(prev => prev + `\n\nResponse: ${JSON.stringify(responseData).substring(0, 300)}`);
-
         if (!response.ok) {
+          const responseData = await response.json();
           throw new Error(responseData.error || `HTTP ${response.status}`);
         }
 
-        setData(responseData);
+        const profileData = await response.json();
+        setData(profileData);
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        setDebug(prev => prev + `\n\nError: ${errMsg}`);
+        const errMsg = err instanceof Error ? err.message : "Unknown error";
         setError(errMsg);
       } finally {
         setLoading(false);
@@ -70,27 +65,15 @@ export default function ProfilePage() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen py-8 px-4">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="rounded-3xl backdrop-blur-20 p-6 space-y-4"
-            style={{
-              background: "linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%)",
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 24px 48px -16px rgba(0,0,0,0.65)",
-            }}
-          >
-            <div className="text-coral font-semibold">❌ Ошибка загрузки</div>
-            <div className="text-foam text-sm">{error}</div>
-            <div className="bg-black/20 rounded-lg p-3 text-foam-muted text-xs font-mono whitespace-pre-wrap break-words overflow-auto max-h-96">
-              {debug}
-            </div>
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full mt-4 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-foam text-sm"
-            >
-              Попробовать ещё
-            </button>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <div className="text-coral font-semibold">Ошибка загрузки</div>
+        <div className="text-foam-muted text-sm">{error}</div>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-foam text-sm"
+        >
+          Попробовать ещё
+        </button>
       </div>
     );
   }
@@ -101,14 +84,9 @@ export default function ProfilePage() {
     <div className="min-h-screen py-4 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="text-center space-y-1">
-          <div className="flex items-center justify-center gap-2">
-            <h1 className="text-2xl font-semibold text-foam">
-              {user.displayName}
-            </h1>
-            <span className="text-xs px-2 py-1 rounded-full bg-white/5 ring-1 ring-white/10 text-foam-muted">
-              {user.bubbleTier || "Novice"}
-            </span>
-          </div>
+          <h1 className="text-2xl font-semibold text-foam">
+            {user.displayName}
+          </h1>
         </div>
 
         <div className="flex justify-center">
@@ -134,8 +112,8 @@ export default function ProfilePage() {
           />
 
           <ProgressBar
-            label="Повторения"
-            icon="⚡"
+            label="Решено"
+            icon="✅"
             current={stats.totalRepetitions}
             target={2000}
             unit=""
@@ -151,12 +129,10 @@ export default function ProfilePage() {
             color="lime"
           />
 
-          <ProgressStat
-            label="Время жизни"
-            icon="⏱️"
-            value={stats.lifetimeFormatted}
-            subtext={`${stats.lifetimeDays} дней`}
-          />
+          <div className="flex items-center gap-2 pt-2">
+            <span className="text-sm">⏱️</span>
+            <span className="text-sm font-medium text-foam">{stats.lifetimeDays} дня</span>
+          </div>
         </div>
 
         <div className="h-20" />
