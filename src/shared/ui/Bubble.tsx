@@ -1,25 +1,24 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/cn";
 import type { MemoryColor } from "@/shared/config/memoryColors";
 import { isPulsing, pulseIntensity, stabilityToTier, type BubbleTier } from "@/entities/task-memory/lib/memoryFormula";
 
 const MEMORY_COLOR_HEX: Record<MemoryColor, string> = {
-  none: "#2A2E2F",
-  blue: "#4FC3F7",
-  green: "#3DDCC4",
+  none:   "#2A2E2F",
+  blue:   "#4FC3F7",
+  green:  "#3DDCC4",
   yellow: "#A3E635",
   orange: "#FBBF24",
-  red: "#F87171",
-  black: "#101314",
+  red:    "#F87171",
+  black:  "#101314",
 };
 
 const TIER_RING: Record<BubbleTier, string> = {
-  wooden: "0 0 0 2px #8B6914",
-  metal: "0 0 0 2px #9CA3AF",
-  gold: "0 0 0 2px #FFD166",
+  wooden:  "0 0 0 2px #8B6914",
+  metal:   "0 0 0 2px #9CA3AF",
+  gold:    "0 0 0 2px #FFD166",
   diamond: "0 0 0 2px #9E8CFF",
 };
 
@@ -48,17 +47,17 @@ export function Bubble({
   const [pressed, setPressed] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
+  const touchFired = useRef(false);
 
   function handleTouchStart() {
     didLongPress.current = false;
+    touchFired.current = false;
     setPressed(true);
     pressTimer.current = setTimeout(() => {
       didLongPress.current = true;
       setShowStatus(true);
     }, 420);
   }
-
-  const touchFired = useRef(false);
 
   function handleTouchEnd() {
     touchFired.current = true;
@@ -91,38 +90,32 @@ export function Bubble({
 
   const boxShadow = isNone
     ? [
-      "0 0 0 1px rgba(255,255,255,0.09)",
-      "inset 0 1px 0 rgba(255,255,255,0.10)",
-      "0 4px 12px -4px rgba(0,0,0,0.55)",
-    ].join(", ")
+        "0 0 0 1px rgba(255,255,255,0.09)",
+        "inset 0 1px 0 rgba(255,255,255,0.10)",
+        "0 4px 12px -4px rgba(0,0,0,0.55)",
+      ].join(", ")
     : [
-      tier ? TIER_RING[tier] : `0 0 0 1px ${hex}55`,
-      `inset 0 1px 0 rgba(255,255,255,0.22)`,
-      `0 0 ${pulsing ? 20 : 14}px -4px ${hex}${pulsing ? "cc" : "99"}`,
-      `0 4px 12px -4px rgba(0,0,0,0.4)`,
-    ].join(", ");
+        tier ? TIER_RING[tier] : `0 0 0 1px ${hex}55`,
+        `inset 0 1px 0 rgba(255,255,255,0.22)`,
+        `0 0 ${pulsing ? 20 : 14}px -4px ${hex}${pulsing ? "cc" : "99"}`,
+        `0 4px 12px -4px rgba(0,0,0,0.4)`,
+      ].join(", ");
+
+  const pulseKeyframes = pulsing
+    ? `@keyframes bubble-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(${pulseScale}); } }`
+    : "";
 
   return (
     <div className="relative flex flex-col items-center">
-      <motion.button
+      {pulsing && <style>{pulseKeyframes}</style>}
+      <button
         type="button"
         aria-label={`Задание ${number}. ${statusText}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={handleClick}
-        animate={pulsing
-          ? { scale: [1, pulseScale, 1] }
-          : pressed
-            ? { scale: 0.93 }
-            : { scale: 1 }
-        }
-        transition={pulsing
-          ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
-          : { type: "tween", duration: 0.15, ease: "easeOut" }
-        }
         className={cn(
-          "relative flex items-center justify-center rounded-full font-body font-medium",
-          "transition-colors select-none",
+          "relative flex items-center justify-center rounded-full font-body font-medium select-none",
           dimension,
         )}
         style={{
@@ -131,10 +124,14 @@ export function Bubble({
             : `linear-gradient(160deg, ${hex}cc 0%, ${hex}88 100%)`,
           boxShadow,
           color: isNone ? "rgba(255,255,255,0.35)" : "#0D0F0F",
+          transform: pressed ? "scale(0.93)" : "scale(1)",
+          transition: "transform 0.15s ease-out, background 0.3s ease-out",
+          animation: pulsing ? `bubble-pulse 2s ease-in-out infinite` : undefined,
+          willChange: "transform",
         }}
       >
         {number}
-      </motion.button>
+      </button>
 
       {showStatus && (
         <div
