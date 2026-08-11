@@ -63,7 +63,7 @@ model TaskMemory {
   taskTypeId String
   taskType   TaskType @relation(fields: [taskTypeId], references: [id])
   repetitions Int @default(0)
-  intervalDays Int @default(0)
+  intervalDays Float @default(0)
   lastReview DateTime?
   nextReview DateTime?
   createdAt DateTime @default(now())
@@ -78,7 +78,7 @@ model ReviewLog {
   taskTypeId String
   taskType   TaskType @relation(fields: [taskTypeId], references: [id])
   reviewedAt DateTime @default(now())
-  previousIntervalDays Int
+  previousIntervalDays Float
   previousNextReview   DateTime?
 }
 
