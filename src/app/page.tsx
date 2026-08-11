@@ -225,18 +225,14 @@ export default function HomePage() {
 
     const now = new Date();
 
-    // Локально пересчитываем цвет и M сразу после клика
     setTasks(prev => prev.map(t => {
       if (t.taskTypeId !== taskTypeId) return t;
-      const newRepetitions = t.repetitions + 1;
-      const newStabilityDays = t.stabilityDays <= 0 ? 2 : t.stabilityDays;
-      const newM = 100; // сразу после повторения M = 100%
       return {
         ...t,
-        repetitions: newRepetitions,
-        stabilityDays: newStabilityDays,
-        memoryPercent: newM,
-        color: mToColor(newM),
+        repetitions: t.repetitions + 1,
+        stabilityDays: t.stabilityDays <= 0 ? 2 : t.stabilityDays,
+        memoryPercent: 100,
+        color: mToColor(100),
         reviewedToday: true,
         lastReviewLabel: "только что",
       };
@@ -246,11 +242,25 @@ export default function HomePage() {
     if (cached) {
       setCachedTasks({
         ...cached,
-        tasks: cached.tasks.map(t =>
-          t.taskTypeId === taskTypeId
-            ? { ...t, repetitions: t.repetitions + 1, lastReview: now.toISOString() }
-            : t
-        ),
+        tasks: cached.tasks.map(t => {
+          if (t.taskTypeId !== taskTypeId) return t;
+          const S_old = t.intervalDays <= 0 ? 2 : Number(t.intervalDays);
+          const isFirst = t.repetitions === 0;
+          // M было 100% в момент первого повторения → Q=0.05
+          // Но для последующих считаем честно по старому M
+          const deltaDays = t.lastReview
+            ? (now.getTime() - new Date(t.lastReview).getTime()) / 86400000
+            : 0;
+          const m = isFirst ? 100 : 100 * Math.pow(2, -deltaDays / S_old);
+          const q = m >= 90 ? 0.05 : m >= 75 ? 0.25 : m >= 60 ? 0.60 : m >= 40 ? 1.00 : m >= 25 ? 0.85 : m >= 10 ? 0.55 : 0.30;
+          const S_new = isFirst ? 2 : S_old * (1 + 0.7 * q);
+          return {
+            ...t,
+            repetitions: t.repetitions + 1,
+            intervalDays: S_new,
+            lastReview: now.toISOString(),
+          };
+        }),
       });
     }
 
