@@ -3,23 +3,17 @@
 import { useRef, useState } from "react";
 import { cn } from "@/shared/lib/cn";
 import type { MemoryColor } from "@/shared/config/memoryColors";
-import { isPulsing, pulseIntensity, stabilityToTier, type BubbleTier } from "@/entities/task-memory/lib/memoryFormula";
+import { isPulsing, pulseIntensity } from "@/entities/task-memory/lib/memoryFormula";
 
 const MEMORY_COLOR_HEX: Record<MemoryColor, string> = {
-  none:   "#2A2E2F",
-  blue:   "#4FC3F7",
-  green:  "#3DDCC4",
-  yellow: "#A3E635",
-  orange: "#FBBF24",
-  red:    "#F87171",
-  black:  "#101314",
-};
-
-const TIER_RING: Record<BubbleTier, string> = {
-  wooden:  "0 0 0 2px #8B6914",
-  metal:   "0 0 0 2px #9CA3AF",
-  gold:    "0 0 0 2px #FFD166",
-  diamond: "0 0 0 2px #9E8CFF",
+  none:    "#2A2E2F",
+  emerald: "#3DDCC4",
+  green:   "#4ADE80",
+  lime:    "#A3E635",
+  amber:   "#FFD166",
+  orange:  "#FB923C",
+  coral:   "#F87171",
+  red:     "#EF4444",
 };
 
 export interface BubbleProps {
@@ -81,9 +75,7 @@ export function Bubble({
 
   const hex = MEMORY_COLOR_HEX[color];
   const isNone = color === "none";
-  const hasStarted = !isNone && stabilityDays > 0;
-  const tier = hasStarted ? stabilityToTier(stabilityDays) : null;
-  const pulsing = hasStarted && isPulsing(memoryPercent);
+  const pulsing = !isNone && isPulsing(memoryPercent);
   const intensity = pulsing ? pulseIntensity(memoryPercent) : 0;
   const pulseScale = 1 + 0.06 * intensity;
   const dimension = size === "sm" ? "h-10 w-10 text-xs" : "h-12 w-12 text-sm";
@@ -95,14 +87,14 @@ export function Bubble({
         "0 4px 12px -4px rgba(0,0,0,0.55)",
       ].join(", ")
     : [
-        tier ? TIER_RING[tier] : `0 0 0 1px ${hex}55`,
+        `0 0 0 1px ${hex}55`,
         `inset 0 1px 0 rgba(255,255,255,0.22)`,
         `0 0 ${pulsing ? 20 : 14}px -4px ${hex}${pulsing ? "cc" : "99"}`,
         `0 4px 12px -4px rgba(0,0,0,0.4)`,
       ].join(", ");
 
   const pulseKeyframes = pulsing
-    ? `@keyframes bubble-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(${pulseScale}); } }`
+    ? `@keyframes bubble-pulse-${number} { 0%, 100% { transform: scale(1); } 50% { transform: scale(${pulseScale}); } }`
     : "";
 
   return (
@@ -126,7 +118,7 @@ export function Bubble({
           color: isNone ? "rgba(255,255,255,0.35)" : "#0D0F0F",
           transform: pressed ? "scale(0.93)" : "scale(1)",
           transition: "transform 0.15s ease-out, background 0.3s ease-out",
-          animation: pulsing ? `bubble-pulse 2s ease-in-out infinite` : undefined,
+          animation: pulsing ? `bubble-pulse-${number} 2s ease-in-out infinite` : undefined,
           willChange: "transform",
         }}
       >
