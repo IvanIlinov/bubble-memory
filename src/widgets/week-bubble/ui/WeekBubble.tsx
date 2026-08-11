@@ -32,22 +32,36 @@ function toRgb({ r, g, b }: { r: number; g: number; b: number }) {
 export function WeekBubble({ totalReps }: { totalReps: number }) {
   const target = 27;
   const progress = Math.min(totalReps / target, 1);
+  const isComplete = progress >= 1;
   const circumference = 2 * Math.PI * 46;
   const offset = circumference * (1 - progress);
 
-  const startColor = toRgb(COLOR_STOPS[0]!);
   const endColor = interpolateColor(progress);
-  const glowRgb = `${endColor.r},${endColor.g},${endColor.b}`;
+  const green = COLOR_STOPS[5]!;
+  const startColor = isComplete ? toRgb(green) : toRgb(COLOR_STOPS[0]!);
+  const glowRgb = isComplete
+    ? `${green.r},${green.g},${green.b}`
+    : `${endColor.r},${endColor.g},${endColor.b}`;
 
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
       <div className="relative">
-        <div
-          className="absolute -inset-4 rounded-full blur-2xl opacity-40"
+        {/* Внешнее свечение — пульсирует при завершении */}
+        <motion.div
+          className="absolute -inset-4 rounded-full blur-2xl"
+          animate={isComplete
+            ? { opacity: [0.4, 0.7, 0.4] }
+            : { opacity: 0.4 }
+          }
+          transition={isComplete
+            ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0 }
+          }
           style={{
             background: `radial-gradient(circle, rgba(${glowRgb},0.35) 0%, transparent 70%)`,
           }}
         />
+
         <div
           className="relative h-[11.75rem] w-[11.75rem] sm:h-[13.75rem] sm:w-[13.75rem] lg:h-[16.75rem] lg:w-[16.75rem] rounded-full flex items-center justify-center"
           role="img"
@@ -62,7 +76,7 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
             <defs>
               <linearGradient id="ringGradient" x1="1" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={startColor} />
-                <stop offset="100%" stopColor={toRgb(endColor)} />
+                <stop offset="100%" stopColor={isComplete ? toRgb(green) : toRgb(endColor)} />
               </linearGradient>
             </defs>
             <circle
