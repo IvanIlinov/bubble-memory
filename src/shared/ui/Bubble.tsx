@@ -8,7 +8,7 @@ import { isPulsing, pulseIntensity } from "@/entities/task-memory/lib/memoryForm
 const MEMORY_COLOR_HEX: Record<MemoryColor, string> = {
   none: "#2A2E2F",
   green: "#4ADE80",
-  mint: "#3DDCC4",
+  mint: "#86EFAC",
   lime: "#A3E635",
   amber: "#FFD166",
   orange: "#FB923C",
