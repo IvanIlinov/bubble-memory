@@ -22,26 +22,32 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Декодируем URL-encoded строку
     const decodedUserStr = decodeURIComponent(userStr);
     const telegramUser = JSON.parse(decodedUserStr);
     const telegramId = String(telegramUser.id);
+
+    console.log("Looking for user:", telegramId);
 
     const user = await prisma.user.findUnique({
       where: { telegramId },
     });
 
     if (!user) {
+      console.log("User not found:", telegramId);
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       );
     }
 
+    console.log("User found:", user.id, "createdAt:", user.createdAt);
+
     const taskMemories = await prisma.taskMemory.findMany({
       where: { userId: user.id },
       include: { taskType: true },
     });
+
+    console.log("Task memories found:", taskMemories.length);
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const weekReviews = await prisma.reviewLog.findMany({
@@ -51,6 +57,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    console.log("Week reviews found:", weekReviews.length);
+
     const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
     const yearReviews = await prisma.reviewLog.findMany({
       where: {
@@ -58,6 +66,8 @@ export async function GET(req: NextRequest) {
         reviewedAt: { gte: yearAgo },
       },
     });
+
+    console.log("Year reviews found:", yearReviews.length);
 
     const totalRepetitions = taskMemories.reduce(
       (sum, tm) => sum + tm.repetitions,
@@ -69,12 +79,22 @@ export async function GET(req: NextRequest) {
       return tm.repetitions >= 10;
     }).length;
 
+    console.log("Calculating lifetime...");
     const now = new Date();
-    const daysAlive = Math.floor(
-      (now.getTime() - user.createdAt.getTime()) / (24 * 60 * 60 * 1000)
-    );
+    console.log("now:", now);
+    console.log("createdAt:", user.createdAt);
+    
+    let daysAlive = 0;
+    if (user.createdAt) {
+      daysAlive = Math.floor(
+        (now.getTime() - new Date(user.createdAt).getTime()) / (24 * 60 * 60 * 1000)
+      );
+    }
+    
     const monthsAlive = Math.floor(daysAlive / 30);
     const remainingDays = daysAlive % 30;
+
+    console.log("daysAlive:", daysAlive);
 
     return NextResponse.json({
       user: {
@@ -104,8 +124,9 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Profile API error:", error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: `Error: ${error instanceof Error ? error.message : "unknown"}` },
+      { error: errorMsg },
       { status: 500 }
     );
   }
