@@ -45,24 +45,33 @@ export function Bubble({
   size = "md",
 }: BubbleProps) {
   const [showStatus, setShowStatus] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tapProcessed = useRef(false);
+  const didLongPress = useRef(false);
 
-  function handlePressStart() {
-    tapProcessed.current = false;
-    pressTimer.current = setTimeout(() => setShowStatus(true), 420);
+  function handleTouchStart() {
+    didLongPress.current = false;
+    setPressed(true);
+    pressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      setShowStatus(true);
+    }, 420);
   }
 
-  function handlePressEnd() {
+  function handleTouchEnd() {
+    setPressed(false);
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
+    if (didLongPress.current) {
+      setShowStatus(false);
+      return;
+    }
+    onReview?.();
   }
 
-  function handleTap() {
-    if (tapProcessed.current) return;
-    tapProcessed.current = true;
+  function handleClick() {
     if (showStatus) { setShowStatus(false); return; }
     onReview?.();
   }
@@ -94,18 +103,18 @@ export function Bubble({
       <motion.button
         type="button"
         aria-label={`Задание ${number}. ${statusText}`}
-        onPointerDown={handlePressStart}
-        onPointerUp={() => { handlePressEnd(); handleTap(); }}
-        onPointerLeave={() => { handlePressEnd(); setShowStatus(false); }}
-        onTouchEnd={() => { handlePressEnd(); handleTap(); }}
-        whileTap={{ scale: 0.93 }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
         animate={pulsing
           ? { scale: [1, pulseScale, 1] }
+          : pressed
+          ? { scale: 0.93 }
           : { scale: 1 }
         }
         transition={pulsing
           ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
-          : { type: "tween", duration: 0.2, ease: "easeOut" }
+          : { type: "tween", duration: 0.15, ease: "easeOut" }
         }
         className={cn(
           "relative flex items-center justify-center rounded-full font-body font-medium",
