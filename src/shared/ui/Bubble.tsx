@@ -7,19 +7,19 @@ import type { MemoryColor } from "@/shared/config/memoryColors";
 import { isPulsing, pulseIntensity, stabilityToTier, type BubbleTier } from "@/entities/task-memory/lib/memoryFormula";
 
 const MEMORY_COLOR_HEX: Record<MemoryColor, string> = {
-  none:   "#2A2E2F",
-  blue:   "#4FC3F7",
-  green:  "#3DDCC4",
+  none: "#2A2E2F",
+  blue: "#4FC3F7",
+  green: "#3DDCC4",
   yellow: "#A3E635",
   orange: "#FBBF24",
-  red:    "#F87171",
-  black:  "#101314",
+  red: "#F87171",
+  black: "#101314",
 };
 
 const TIER_RING: Record<BubbleTier, string> = {
-  wooden:  "0 0 0 2px #8B6914",
-  metal:   "0 0 0 2px #9CA3AF",
-  gold:    "0 0 0 2px #FFD166",
+  wooden: "0 0 0 2px #8B6914",
+  metal: "0 0 0 2px #9CA3AF",
+  gold: "0 0 0 2px #FFD166",
   diamond: "0 0 0 2px #9E8CFF",
 };
 
@@ -58,7 +58,10 @@ export function Bubble({
     }, 420);
   }
 
+  const touchFired = useRef(false);
+
   function handleTouchEnd() {
+    touchFired.current = true;
     setPressed(false);
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
@@ -72,6 +75,7 @@ export function Bubble({
   }
 
   function handleClick() {
+    if (touchFired.current) { touchFired.current = false; return; }
     if (showStatus) { setShowStatus(false); return; }
     onReview?.();
   }
@@ -87,16 +91,16 @@ export function Bubble({
 
   const boxShadow = isNone
     ? [
-        "0 0 0 1px rgba(255,255,255,0.09)",
-        "inset 0 1px 0 rgba(255,255,255,0.10)",
-        "0 4px 12px -4px rgba(0,0,0,0.55)",
-      ].join(", ")
+      "0 0 0 1px rgba(255,255,255,0.09)",
+      "inset 0 1px 0 rgba(255,255,255,0.10)",
+      "0 4px 12px -4px rgba(0,0,0,0.55)",
+    ].join(", ")
     : [
-        tier ? TIER_RING[tier] : `0 0 0 1px ${hex}55`,
-        `inset 0 1px 0 rgba(255,255,255,0.22)`,
-        `0 0 ${pulsing ? 20 : 14}px -4px ${hex}${pulsing ? "cc" : "99"}`,
-        `0 4px 12px -4px rgba(0,0,0,0.4)`,
-      ].join(", ");
+      tier ? TIER_RING[tier] : `0 0 0 1px ${hex}55`,
+      `inset 0 1px 0 rgba(255,255,255,0.22)`,
+      `0 0 ${pulsing ? 20 : 14}px -4px ${hex}${pulsing ? "cc" : "99"}`,
+      `0 4px 12px -4px rgba(0,0,0,0.4)`,
+    ].join(", ");
 
   return (
     <div className="relative flex flex-col items-center">
@@ -109,8 +113,8 @@ export function Bubble({
         animate={pulsing
           ? { scale: [1, pulseScale, 1] }
           : pressed
-          ? { scale: 0.93 }
-          : { scale: 1 }
+            ? { scale: 0.93 }
+            : { scale: 1 }
         }
         transition={pulsing
           ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
