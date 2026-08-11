@@ -8,14 +8,13 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
   const circumference = 2 * Math.PI * 46;
   const offset = circumference * (1 - progress);
 
-
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
       <div className="relative">
         <div
           className="absolute -inset-4 rounded-full blur-2xl opacity-40"
           style={{
-            background: "radial-gradient(circle, rgba(61,220,196,0.3) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(74,222,128,0.3) 0%, transparent 70%)",
           }}
         />
         <div
@@ -40,12 +39,12 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
               initial={false}
               animate={{ strokeDashoffset: offset }}
               transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0] }}
-              style={{ filter: "drop-shadow(0 0 6px rgba(61,220,196,0.6))" }}
+              style={{ filter: "drop-shadow(0 0 6px rgba(74,222,128,0.6))" }}
             />
             <defs>
               <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#3DDCC4" />
-                <stop offset="100%" stopColor="#9E8CFF" />
+                <stop offset="0%" stopColor="#4ADE80" />
+                <stop offset="100%" stopColor="#EF4444" />
               </linearGradient>
             </defs>
           </svg>
@@ -59,8 +58,8 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
       {/* Разделитель */}
       <div className="w-full mt-1" style={{
         height: "1px",
-        background: "linear-gradient(90deg, transparent 0%, rgba(61,220,196,0.25) 30%, rgba(158,140,255,0.25) 70%, transparent 100%)",
-        boxShadow: "0 0 8px 0px rgba(61,220,196,0.15)",
+        background: "linear-gradient(90deg, transparent 0%, rgba(74,222,128,0.25) 30%, rgba(239,68,68,0.25) 70%, transparent 100%)",
+        boxShadow: "0 0 8px 0px rgba(74,222,128,0.15)",
       }} />
     </div>
   );
