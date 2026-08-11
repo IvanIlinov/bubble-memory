@@ -51,7 +51,7 @@ function convertTasks(data: ServerTask[]): MockTaskBubble[] {
       lastReviewLabel: t.lastReview
         ? `${Math.round((now.getTime() - new Date(t.lastReview).getTime()) / 86400000)} дн. назад`
         : "ещё не начато",
-      reviewedToday: false,
+      reviewedToday: !!t.lastReview && new Date(t.lastReview).toDateString() === new Date().toDateString(),
     };
   });
 }
@@ -219,17 +219,41 @@ export default function HomePage() {
   async function handleReview(taskTypeId: string): Promise<void> {
     const uid = userIdRef.current;
     if (!uid) return;
+
     totalRepsRef.current++;
     setTotalReps(totalRepsRef.current);
+
+    const now = new Date();
+
+    // Локально пересчитываем цвет и M сразу после клика
+    setTasks(prev => prev.map(t => {
+      if (t.taskTypeId !== taskTypeId) return t;
+      const newRepetitions = t.repetitions + 1;
+      const newStabilityDays = t.stabilityDays <= 0 ? 2 : t.stabilityDays;
+      const newM = 100; // сразу после повторения M = 100%
+      return {
+        ...t,
+        repetitions: newRepetitions,
+        stabilityDays: newStabilityDays,
+        memoryPercent: newM,
+        color: mToColor(newM),
+        reviewedToday: true,
+        lastReviewLabel: "только что",
+      };
+    }));
+
     const cached = getCachedTasks();
     if (cached) {
       setCachedTasks({
         ...cached,
         tasks: cached.tasks.map(t =>
-          t.taskTypeId === taskTypeId ? { ...t, repetitions: t.repetitions + 1 } : t
+          t.taskTypeId === taskTypeId
+            ? { ...t, repetitions: t.repetitions + 1, lastReview: now.toISOString() }
+            : t
         ),
       });
     }
+
     try {
       await fetch("/api/review", {
         method: "POST",
