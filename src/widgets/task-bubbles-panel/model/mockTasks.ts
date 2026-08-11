@@ -1,4 +1,5 @@
 import type { MemoryColor } from "@/shared/config/memoryColors";
+import { mToColor } from "@/entities/task-memory/lib/memoryFormula";
 
 export interface MockTaskBubble {
   taskTypeId: string;
@@ -6,6 +7,8 @@ export interface MockTaskBubble {
   title: string;
   color: MemoryColor;
   repetitions: number;
+  stabilityDays: number;
+  memoryPercent: number;
   lastReviewLabel: string;
   reviewedToday: boolean;
 }
@@ -51,28 +54,24 @@ const COLORS: readonly MemoryColor[] = [
 ];
 
 export function getMockTaskBubbles(): MockTaskBubble[] {
-  const result: MockTaskBubble[] = [];
-  let index = 0;
-
-  for (const title of TITLES) {
+  return TITLES.map((title, index) => {
     const number = index + 1;
-    const color = COLORS[index % COLORS.length]!;
-    const repetitions = color === "none" ? 0 : (index % 6) + 1;
-    const reviewedToday = index % 9 === 0 && color !== "none";
+    const repetitions = index < 3 ? 0 : (index % 8) + 1;
+    const stabilityDays = repetitions === 0 ? 2 : [2, 3, 5, 8, 14, 21, 35, 60][index % 8]!;
+    const deltaDays = repetitions === 0 ? 0 : (index % 12);
+    const m = repetitions === 0 ? 0 : Math.round(100 * Math.pow(2, -deltaDays / stabilityDays));
+    const color: MemoryColor = repetitions === 0 ? "none" : mToColor(m);
 
-    result.push({
+    return {
       taskTypeId: `task-${number}`,
       number,
       title,
       color,
       repetitions,
-      lastReviewLabel:
-        color === "none" ? "ещё не начато" : `повторено ${(index % 6) + 1} дн. назад`,
-      reviewedToday,
-    });
-
-    index++;
-  }
-
-  return result;
+      stabilityDays,
+      memoryPercent: m,
+      lastReviewLabel: repetitions === 0 ? "ещё не начато" : `${deltaDays} дн. назад`,
+      reviewedToday: false,
+    };
+  });
 }

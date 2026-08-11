@@ -14,6 +14,7 @@ import {
 import { getCachedTasks, setCachedTasks } from "@/shared/lib/cache";
 import { getMockTaskBubbles } from "@/widgets/task-bubbles-panel/model/mockTasks";
 import type { MockTaskBubble } from "@/widgets/task-bubbles-panel/model/mockTasks";
+import { computeM, mToColor } from "@/entities/task-memory/lib/memoryFormula";
 
 interface User {
   first_name: string;
@@ -27,19 +28,32 @@ interface ServerTask {
   number: number;
   title: string;
   repetitions: number;
+  intervalDays: number;
   lastReview?: string | null;
 }
 
 function convertTasks(data: ServerTask[]): MockTaskBubble[] {
-  return data.map((t) => ({
-    taskTypeId: t.taskTypeId,
-    number: t.number,
-    title: t.title,
-    repetitions: t.repetitions,
-    color: "none" as const,
-    lastReviewLabel: t.lastReview ? "повторено" : "не начато",
-    reviewedToday: false,
-  }));
+  const now = new Date();
+  return data.map((t) => {
+    const hasStarted = t.repetitions > 0 && !!t.lastReview && t.intervalDays > 0;
+    const m = hasStarted
+      ? computeM(new Date(t.lastReview!), t.intervalDays, now)
+      : 0;
+
+    return {
+      taskTypeId: t.taskTypeId,
+      number: t.number,
+      title: t.title,
+      repetitions: t.repetitions,
+      stabilityDays: t.intervalDays,
+      memoryPercent: Math.round(m),
+      color: hasStarted ? mToColor(m) : ("none" as const),
+      lastReviewLabel: t.lastReview
+        ? `${Math.round((now.getTime() - new Date(t.lastReview).getTime()) / 86400000)} дн. назад`
+        : "ещё не начато",
+      reviewedToday: false,
+    };
+  });
 }
 
 const NAV_LINKS = [

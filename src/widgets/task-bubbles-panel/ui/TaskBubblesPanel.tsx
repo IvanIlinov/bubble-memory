@@ -20,6 +20,8 @@ export function TaskBubblesPanel({
           key={task.taskTypeId}
           number={task.number}
           color={task.color}
+          memoryPercent={task.memoryPercent}
+          stabilityDays={task.stabilityDays}
           statusText={`Задание ${task.number}: ${task.title}. ${task.lastReviewLabel}.`}
           alreadyReviewedToday={task.reviewedToday}
           onReview={() => Promise.resolve(onReview?.(task.taskTypeId))}
