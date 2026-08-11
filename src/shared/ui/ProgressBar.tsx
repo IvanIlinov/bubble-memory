@@ -54,7 +54,7 @@ export function ProgressStat({
   label,
   icon,
   value,
-  subtext?: string,
+  subtext,
 }: {
   label: string;
   icon: React.ReactNode;
