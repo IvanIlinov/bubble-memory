@@ -36,30 +36,28 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
   const circumference = 2 * Math.PI * 46;
   const offset = circumference * (1 - progress);
 
+  // Начало градиента отстаёт от конца на 40% — плавно зеленеет весь круг
+  const startColor = interpolateColor(Math.max(0, progress - 0.4));
   const endColor = interpolateColor(progress);
-  const green = COLOR_STOPS[5]!;
-  const startColor = isComplete ? toRgb(green) : toRgb(COLOR_STOPS[0]!);
-  const glowRgb = isComplete
-    ? `${green.r},${green.g},${green.b}`
-    : `${endColor.r},${endColor.g},${endColor.b}`;
+  const glowRgb = `${endColor.r},${endColor.g},${endColor.b}`;
 
   return (
     <div className="flex flex-col items-center gap-3 -ml-4">
       <div className="relative">
-        {/* Внешнее свечение — пульсирует при завершении */}
         <motion.div
-          className="absolute -inset-4 rounded-full blur-2xl"
+          className="absolute rounded-full blur-2xl"
+          style={{
+            inset: isComplete ? "-20px" : "-16px",
+            background: `radial-gradient(circle, rgba(${glowRgb},0.5) 0%, transparent 70%)`,
+          }}
           animate={isComplete
-            ? { opacity: [0.4, 0.7, 0.4] }
-            : { opacity: 0.4 }
+            ? { opacity: [0.6, 1, 0.6], scale: [1, 1.08, 1] }
+            : { opacity: 0.4, scale: 1 }
           }
           transition={isComplete
-            ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
-            : { duration: 0 }
+            ? { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.5 }
           }
-          style={{
-            background: `radial-gradient(circle, rgba(${glowRgb},0.35) 0%, transparent 70%)`,
-          }}
         />
 
         <div
@@ -75,8 +73,8 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
           <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
             <defs>
               <linearGradient id="ringGradient" x1="1" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={startColor} />
-                <stop offset="100%" stopColor={isComplete ? toRgb(green) : toRgb(endColor)} />
+                <stop offset="0%" stopColor={toRgb(startColor)} />
+                <stop offset="100%" stopColor={toRgb(endColor)} />
               </linearGradient>
             </defs>
             <circle
@@ -95,7 +93,7 @@ export function WeekBubble({ totalReps }: { totalReps: number }) {
               initial={false}
               animate={{ strokeDashoffset: offset }}
               transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0] }}
-              style={{ filter: `drop-shadow(0 0 5px rgba(${glowRgb},0.7))` }}
+              style={{ filter: `drop-shadow(0 0 6px rgba(${glowRgb},0.8))` }}
             />
           </svg>
 
