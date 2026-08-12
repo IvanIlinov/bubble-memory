@@ -39,6 +39,7 @@ const TITLES = [
 
 export default function HomePage() {
   const [tasks, setTasks] = useState<MockTaskBubble[]>([]);
+  const [userId, setUserId] = useState<string>("");
   const [totalReps, setTotalReps] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,10 +48,25 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchTasks() {
       try {
-        setDebug("Fetching tasks...");
+        setDebug("Parsing auth...");
+        
+        // Парсим userId из initData
+        const initData = window.Telegram?.WebApp?.initData || "";
+        const params = new URLSearchParams(initData);
+        const userStr = params.get("user");
+        
+        if (!userStr) {
+          throw new Error("No user in initData");
+        }
+        
+        const telegramUser = JSON.parse(decodeURIComponent(userStr));
+        const uid = String(telegramUser.id);
+        setUserId(uid);
+        setDebug(`User: ${uid}. Fetching tasks...`);
+        
         const response = await fetch("/api/tasks", {
           headers: {
-            "x-telegram-init-data": window.Telegram?.WebApp?.initData || "",
+            "x-telegram-init-data": initData,
           },
         });
 
@@ -59,7 +75,7 @@ export default function HomePage() {
         }
 
         const data = await response.json();
-        setDebug(`Got ${data.tasks?.length || 0} tasks from API`);
+        setDebug(`Got ${data.tasks?.length || 0} tasks`);
         const apiTasks = data.tasks || [];
 
         const mockTasks: MockTaskBubble[] = apiTasks.map((task: any, idx: number) => {
@@ -90,11 +106,10 @@ export default function HomePage() {
           };
         });
 
-        setDebug(`Prepared ${mockTasks.length} tasks`);
         setTasks(mockTasks);
         const reps = mockTasks.reduce((sum, task) => sum + task.repetitions, 0);
         setTotalReps(reps);
-        setDebug(`Ready! Total: ${reps} reps`);
+        setDebug(`Ready! ${reps} reps`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setDebug(`Error: ${msg}`);
@@ -120,7 +135,7 @@ export default function HomePage() {
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="text-center space-y-2">
           <div className="text-coral">{error}</div>
-          <div className="text-foam-muted text-sm bg-white/5 p-3 rounded text-left overflow-auto max-h-40">
+          <div className="text-foam-muted text-sm bg-white/5 p-3 rounded text-left">
             {debug}
           </div>
         </div>
@@ -131,26 +146,29 @@ export default function HomePage() {
   const handleReview = async (taskTypeId: string) => {
     setDebug(`Reviewing task ${taskTypeId}...`);
     try {
+      const payload = { userId, taskTypeId };
+      setDebug(`Sending: ${JSON.stringify(payload)}`);
+      
       const response = await fetch("/api/review", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-telegram-init-data": window.Telegram?.WebApp?.initData || "",
         },
-        body: JSON.stringify({ taskTypeId }),
+        body: JSON.stringify(payload),
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errData = await response.json();
-        setDebug(`Review error: ${errData.error}`);
+        setDebug(`Error: ${responseData.error}`);
         return;
       }
 
-      setDebug("Review OK, reloading...");
+      setDebug("OK! Reloading...");
       setTimeout(() => window.location.reload(), 500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setDebug(`Review failed: ${msg}`);
+      setDebug(`Failed: ${msg}`);
     }
   };
 
@@ -160,7 +178,7 @@ export default function HomePage() {
         <WeekBubble totalReps={totalReps} />
         
         {debug && (
-          <div className="text-xs bg-white/5 p-2 rounded text-foam-muted font-mono">
+          <div className="text-xs bg-white/5 p-2 rounded text-foam-muted font-mono break-words">
             {debug}
           </div>
         )}
