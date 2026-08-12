@@ -40,7 +40,19 @@ export default async function handler(
         },
       });
 
-      const tasks = await prisma.taskType.findMany();
+      // Получаем все TaskType
+      const tasks = await prisma.taskType.findMany({
+        orderBy: { number: "asc" },
+      });
+
+      if (tasks.length === 0) {
+        console.error("❌ No TaskType found in database. Run seed first!");
+        return res.status(500).json({ 
+          error: "Database not initialized. Run seed SQL in Supabase." 
+        });
+      }
+
+      // Создаём TaskMemory для всех 27 заданий
       await Promise.all(
         tasks.map((task) =>
           prisma.taskMemory.create({
