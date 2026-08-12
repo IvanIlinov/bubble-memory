@@ -111,11 +111,23 @@ export default function HomePage() {
     );
   }
 
+  const handleReview = async (taskTypeId: string) => {
+    await fetch("/api/review", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-telegram-init-data": window.Telegram?.WebApp?.initData || "",
+      },
+      body: JSON.stringify({ taskTypeId }),
+    });
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen py-4 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <WeekBubble totalReps={totalReps} />
-        <TaskBubblesPanel tasks={tasks} onTaskUpdate={() => window.location.reload()} />
+        <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
         <div className="h-20" />
       </div>
 
