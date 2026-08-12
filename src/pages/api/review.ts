@@ -6,7 +6,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { userId, taskTypeId } = req.body;
-  console.log("1. Review request received:", { userId, taskTypeId, body: req.body });
+  console.log("1. Review request received:", { userId, taskTypeId });
 
   if (!userId || !taskTypeId) {
     console.error("2. Missing fields");
@@ -19,14 +19,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const memory = await prisma.taskMemory.findFirst({
       where: {
         userId: userId,
-        taskTypeId: Number(taskTypeId),
+        taskTypeId: String(taskTypeId),
       },
     });
 
     console.log("4. Query result:", memory);
 
     if (!memory) {
-      console.error("5. Task not found for userId:", userId, "taskTypeId:", taskTypeId);
+      console.error("5. Task not found");
       return res.status(404).json({ error: "Task not found" });
     }
 
@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       lastReview: memory.lastReview,
     });
 
-    console.log("7. Updating TaskMemory:", result);
+    console.log("7. Updating TaskMemory...");
     const updated = await prisma.taskMemory.update({
       where: { id: memory.id },
       data: {
@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await prisma.reviewLog.create({
       data: {
         userId: userId,
-        taskTypeId: Number(taskTypeId),
+        taskTypeId: String(taskTypeId),
         reviewedAt: new Date(),
         previousIntervalDays: memory.intervalDays,
         previousNextReview: memory.nextReview,
