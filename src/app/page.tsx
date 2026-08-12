@@ -59,7 +59,6 @@ export default function HomePage() {
         const data = await response.json();
         const apiTasks = data.tasks || [];
 
-        // Преобразуем в MockTaskBubble
         const mockTasks: MockTaskBubble[] = apiTasks.map((task: any, idx: number) => {
           const lastReview = task.lastReview ? new Date(task.lastReview) : new Date();
           const now = new Date();
