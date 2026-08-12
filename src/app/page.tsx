@@ -165,8 +165,14 @@ export default function HomePage() {
         return;
       }
 
-      setDebug("OK! Reloading...");
-      setTimeout(() => window.location.reload(), 500);
+      setDebug("OK!");
+      setTasks(prev => prev.map(t => {
+        if (t.taskTypeId !== taskTypeId) return t;
+        const newReps = t.repetitions + 1;
+        const newS = t.stabilityDays * 1.7;
+        return { ...t, repetitions: newReps, stabilityDays: Math.round(newS), color: "green", memoryPercent: 100, reviewedToday: true };
+      }));
+      setTotalReps(prev => prev + 1);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setDebug(`Failed: ${msg}`);
