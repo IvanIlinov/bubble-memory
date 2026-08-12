@@ -14,17 +14,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log("3. Querying TaskMemory with userId:", userId, "taskTypeId:", taskTypeId);
-    
+    // Поддержка обоих форматов: "task-1" и реальный UUID
+    let realTaskTypeId = String(taskTypeId);
+    if (taskTypeId.startsWith("task-")) {
+      const number = parseInt(taskTypeId.replace("task-", ""), 10);
+      const taskType = await prisma.taskType.findFirst({ where: { number } });
+      if (!taskType) {
+        console.error("TaskType not found for number:", number);
+        return res.status(404).json({ error: "TaskType not found" });
+      }
+      realTaskTypeId = taskType.id;
+    }
+
+    console.log("3. Querying TaskMemory with userId:", userId, "taskTypeId:", realTaskTypeId);
+
     const memory = await prisma.taskMemory.findFirst({
-      where: {
-        userId: userId,
-        taskTypeId: String(taskTypeId),
-      },
+      where: { userId, taskTypeId: realTaskTypeId },
     });
 
     console.log("4. Query result:", memory);
-
     if (!memory) {
       console.error("5. Task not found");
       return res.status(404).json({ error: "Task not found" });
@@ -51,8 +59,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("8. Creating ReviewLog...");
     await prisma.reviewLog.create({
       data: {
-        userId: userId,
-        taskTypeId: String(taskTypeId),
+        userId,
+        taskTypeId: realTaskTypeId,
         reviewedAt: new Date(),
         previousIntervalDays: memory.intervalDays,
         previousNextReview: memory.nextReview,

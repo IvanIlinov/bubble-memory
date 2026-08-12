@@ -49,21 +49,21 @@ export default function HomePage() {
     async function fetchTasks() {
       try {
         setDebug("Parsing auth...");
-        
+
         // Парсим userId из initData
         const initData = window.Telegram?.WebApp?.initData || "";
         const params = new URLSearchParams(initData);
         const userStr = params.get("user");
-        
+
         if (!userStr) {
           throw new Error("No user in initData");
         }
-        
+
         const telegramUser = JSON.parse(decodeURIComponent(userStr));
         const uid = String(telegramUser.id);
-        setUserId(uid);
+
         setDebug(`User: ${uid}. Fetching tasks...`);
-        
+
         const response = await fetch("/api/tasks", {
           headers: {
             "x-telegram-init-data": initData,
@@ -75,26 +75,27 @@ export default function HomePage() {
         }
 
         const data = await response.json();
+        setUserId(data.userId);
         setDebug(`Got ${data.tasks?.length || 0} tasks`);
         const apiTasks = data.tasks || [];
 
         const mockTasks: MockTaskBubble[] = apiTasks.map((task: any, idx: number) => {
           const repetitions = task.repetitions || 0;
           const S = task.intervalDays || 2;
-          
+
           let m = 100;
-          
+
           if (repetitions > 0 && task.lastReview) {
             const lastReview = new Date(task.lastReview);
             const now = new Date();
             const deltaDays = (now.getTime() - lastReview.getTime()) / (1000 * 60 * 60 * 24);
             m = Math.max(0, Math.round(100 * Math.pow(2, -deltaDays / S)));
           }
-          
+
           const color = mToColor(m);
 
           return {
-            taskTypeId: String(task.taskTypeId || idx + 1),
+            taskTypeId: String(task.taskTypeId),
             number: idx + 1,
             title: TITLES[idx] || `Задание ${idx + 1}`,
             color,
@@ -148,7 +149,7 @@ export default function HomePage() {
     try {
       const payload = { userId, taskTypeId };
       setDebug(`Sending: ${JSON.stringify(payload)}`);
-      
+
       const response = await fetch("/api/review", {
         method: "POST",
         headers: {
@@ -158,7 +159,7 @@ export default function HomePage() {
       });
 
       const responseData = await response.json();
-      
+
       if (!response.ok) {
         setDebug(`Error: ${responseData.error}`);
         return;
@@ -176,13 +177,13 @@ export default function HomePage() {
     <div className="min-h-screen py-4 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <WeekBubble totalReps={totalReps} />
-        
+
         {debug && (
           <div className="text-xs bg-white/5 p-2 rounded text-foam-muted font-mono break-words">
             {debug}
           </div>
         )}
-        
+
         <TaskBubblesPanel tasks={tasks} onReview={handleReview} />
         <div className="h-20" />
       </div>

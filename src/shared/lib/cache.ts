@@ -1,4 +1,4 @@
-const CACHE_KEY = "bubble-memory-tasks-v2";
+const CACHE_KEY = "bubble-memory-tasks-v3";
 const CACHE_EXPIRY = 60 * 60 * 1000; // 1 час
 
 export interface CachedData {
